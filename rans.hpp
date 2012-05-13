@@ -1279,20 +1279,21 @@ std::string& RANS::rep(const mpz_class& value, std::string& text) const
       val = val_ = 0;
       V.clear();
       power(_adjacency_matrix, len - 1, tmpM);
+
       for (std::size_t c = 0; c < 256; c++) {
         int next = _dfa[state][c];
-        if (next != DFA::REJECT) {
-          V[next]++;
-          prod(V, tmpM, tmpV);
-          val_ = 0;
-          inner_prod(tmpV, _accept_vector, val_);
-          if (val < val_) std::swap(val, val_);
-          if (val > value_) {
-            text.append(1, c);
-            state = next;
-            value_ -= val_;
-            break;
-          }
+        if (next == DFA::REJECT) continue;
+
+        val_ = val; // save before value
+        for (std::size_t i = 0; i < size(); i++) {
+          if (_dfa.is_accept(i)) val += tmpM(next, i);
+        }
+
+        if (val > value_) {
+          text.append(1, c);
+          state = next;
+          value_ -= val_;
+          break;
         }
       }
     }

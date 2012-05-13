@@ -1,6 +1,13 @@
-#MATRIX_LIB=UBLAS
+MODE=RELEASE #or DEBUG
+MATRIX_LIB=SELF #or UBLAS
+
 CC=g++
-CFLAGS=-O3 -g3 -Wall -I$(PWD) -I$(PWD)/test -DRANS_USE_$(MATRIX_LIB)
+
+ifeq ($(MODE),DEBUG)
+CFLAGS=-O0 -g3 -Wall -I$(PWD) -I$(PWD)/test -DRANS_USE_$(MATRIX_LIB) -DRANS_DEBUG
+else
+CFLAGS=-O3 -Wall -I$(PWD) -I$(PWD)/test -DRANS_USE_$(MATRIX_LIB)
+endif
 LFLAGS=-lgmp -lgmpxx -lgflags
 prefix=/usr/local
 

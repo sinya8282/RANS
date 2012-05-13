@@ -29,12 +29,13 @@ TEST(ELEMENTAL_TEST, DFA_MINIMIZE) {
 // 
 // But this theorem doesn't hold in ANS on L(a*b*|a*c*) !!
 // -> val("a") = 1, val("aa") = 4,,, val("a"*n) = n^2
+// See Prof.Michel Rigo's great publications about ANS, for more theoretical asspects.
 
 TEST(EILENBERG_TEST, RANS_VAL) {
   RANS r("a*b*|a*c*");
   std::string text;
   for (std::size_t i = 0; i < 10; i++) {
-    ASSERT_EQ(i * i, r.val(text));
+    ASSERT_EQ(i * i, r(text));
     text += "a";
   }
 }
@@ -43,13 +44,13 @@ TEST(EILENBERG_TEST, RANS_REP) {
   RANS r("a*b*|a*c*");
   std::string text;
   for (std::size_t i = 0; i < 10; i++) {
-    ASSERT_EQ(text, r.rep(i * i));
+    ASSERT_EQ(text, r(i * i));
     text += "a";
   }
 }
 
 // Googol = 10^100
-const mpz_class googol("10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000");
+const RANS::Value googol("10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000");
 
 RANS base2("0|1[01]*");
 const std::string googol_base2 = "100100100100110101101001001011001010011000011011111001110101100001011001001111000010011000100110011100000101111110011100010101100111001000000100011100010000100011010011111001010101010110010010000110000100010101000001011101000111100010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
@@ -64,17 +65,17 @@ RANS baseACGT("[ACGT]+");
 const std::string googol_baseACGT = "TATTCACCCTTCAAATTTCGTGAGCTGCCCGTCCTCAGAGTTCGTTCTGAGTCGGCTGATCCCTGATGGTATGATAGTTACCAGCTCCCCCCTATGTCGTATCCAGTCGCATGCGTGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGTA";
 
 TEST(GOOGOL_BASE_TEST, RANS_VAL) {
-  ASSERT_EQ(googol, base2.val(googol_base2));
-  ASSERT_EQ(googol, base3.val(googol_base3));
-  ASSERT_EQ(googol, base16.val(googol_base16));
-  ASSERT_EQ(googol, baseACGT.val(googol_baseACGT));
+  ASSERT_EQ(googol, base2(googol_base2));
+  ASSERT_EQ(googol, base3(googol_base3));
+  ASSERT_EQ(googol, base16(googol_base16));
+  ASSERT_EQ(googol, baseACGT(googol_baseACGT));
 }
 
 TEST(GOOGOL_BASE_TEST, RANS_REP) {
-  ASSERT_EQ(googol_base2, base2.rep(googol));
-  ASSERT_EQ(googol_base3, base3.rep(googol));
-  ASSERT_EQ(googol_base16, base16.rep(googol));
-  ASSERT_EQ(googol_baseACGT, baseACGT.rep(googol));
+  ASSERT_EQ(googol_base2, base2(googol));
+  ASSERT_EQ(googol_base3, base3(googol));
+  ASSERT_EQ(googol_base16, base16(googol));
+  ASSERT_EQ(googol_baseACGT, baseACGT(googol));
 }
 
 
@@ -98,16 +99,16 @@ TEST(HTTP_URL_TEST, DFA_MINIMIZE) {
 
 RANS base_http(http_url_regex);
 const std::string homepage_url("http://swatmac.info/");
-const mpz_class homepage_val("418454636203975692482093");
+const RANS::Value homepage_val("418454636203975692482093");
 
 const std::string googol_url("http://A/Yq~s3G7F.3uK:M5r_swBtJW~7ZmRGX1mO:,I6lB2YT$(BZriW@&.");
 
 TEST(HTTP_URL_TEST, RANS_VAL) {
-  ASSERT_EQ(homepage_val, base_http.val(homepage_url));
-  ASSERT_EQ(googol, base_http.val(googol_url));
+  ASSERT_EQ(homepage_val, base_http(homepage_url));
+  ASSERT_EQ(googol, base_http(googol_url));
 }
 
 TEST(HTTP_URL_TEST, RANS_REP) {
-  ASSERT_EQ(homepage_url, base_http.rep(homepage_val));
-  ASSERT_EQ(googol_url, base_http.rep(googol));
+  ASSERT_EQ(homepage_url, base_http(homepage_val));
+  ASSERT_EQ(googol_url, base_http(googol));
 }

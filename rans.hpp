@@ -1,11 +1,36 @@
-// RANS - Implementation of Abstract Numeration System on Regular Language.
-//
+#ifndef RANS_H_
+#define RANS_H_
+
 // Copyright Ryoma Sin'ya, 2012. All Rights Reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
+//
+/*
+    _______          _       ____  _____   ______
+    |_  __ \        / \     |_   \|_   _|.' ____ \
+     | |__) |      / _ \      |   \ | |  | (___ \_|
+     |  __ /      / ___ \     | |\ \| |   \_____`.
+    _| |  \ \_  _/ /   \ \_  _| |_\   |_ | \____) |
+   |____| |___||____| |____||_____|\____| \______.'
 
-#ifndef RANS_H_
-#define RANS_H_
+*/
+// RANS - Implementation of Abstract-Numeration-System(ANS) on regular language.
+// This header file consists of mainly three parts described below.
+//
+// rans::DFA (and Parse), is simple DFA implementation.
+// Parse recognizes simplified extended regular expression.
+//
+// rans::MPMatrix (and MPVector) is Multi-Precision Integer Matrix/Vector
+// implementation. it's necessary to calculate both value and representation
+// on ANS. I implemented ANS by using adjacency matrix of DFA.
+//
+// rans::RANS is main class, which would be exported (using rans::RANS).
+// users can use this simply just like 'RANS r(regex);'.
+//
+// To see more details/usage, you could check test/rans.cc, which is
+// RANS simple demo program, and test/test.cc, which contains some theortical notes,
+// or my github repo http://github.com/sinya8282/RANS
+// also see Prof.Michel Rigo's great publications about ANS, for more theoretical asspects.
 
 #include <iostream>
 #include <sstream>
@@ -18,13 +43,14 @@
 #include <map>
 #include <algorithm>
 
-// external libraries: gmp, gflags, (Boost.uBLAS)
+// External libraries: gmp(gmpxx), gflags, (Boost.uBLAS if you choose)
 #include <gmpxx.h>
 
-// You can chose uBLAS as Matrix/Vector classes, but
-// it's seems slower than self-implementation.
-// (I'm not sure how to use uBLAS effectively,,,)
-// RANS_USE_UBLAS is *undefined* as a default in Makefile.
+// You can choose uBLAS as Matrix/Vector classes, but
+// it seems slower (both compilation time and peformance) than
+// self-implementation. (I'm not sure how to use uBLAS effectively,,,)
+// Therefore RANS_USE_UBLAS macro is *Undefined* as a default in Makefile.
+
 #ifdef RANS_USE_UBLAS
 #include <boost/numeric/ublas/vector.hpp>
 #include <boost/numeric/ublas/matrix.hpp>
@@ -33,48 +59,25 @@
 #endif
 
 #include <gflags/gflags.h>
-DEFINE_bool(dump_expr, false, "Dump expr-tree, for debugin.");
-DEFINE_bool(dump_dfa, false, "Dump dfa, for debugin.");
-DEFINE_bool(dump_matrix, false, "Dump matrix, for debugin.");
-DEFINE_bool(minimize, true, "Minimize DFA.");
-
-/* * * * * * * * * * * * * * * * * * * * * * * * *
- _______          _       ____  _____   ______
- |_  __ \        / \     |_   \|_   _|.' ____ \
-  | |__) |      / _ \      |   \ | |  | (___ \_|
-  |  __ /      / ___ \     | |\ \| |   \_____`.
- _| |  \ \_  _/ /   \ \_  _| |_\   |_ | \____) |
-|____| |___||____| |____||_____|\____| \______.'
-
-* * * * * * * * * * * * * * * * * * * * * * * * */
-// RANS consists of mainly 3 parts.
-//
-// rans::DFA (and Parse), is simple DFA implementation.
-// it's recognize simplified extended regular expression.
-//
-// rans::MPMatrix (and MPVector) is Multi-Precision Integer Matrix/Vector
-// implementation. it's necessary to calculate both value and representation
-// on ANS. I implemented ANS by using adjacency matrix of DFA.
-//
-// rans::RANS is main class.
-// rans::RANS would be exported (using rans::RANS).
-// so, users can use this simply like a 'RANS r(regex);'.
-//
-// To see more details/usage, you could check test/rans.cc, which is
-// RANS simple demo program, and test/test.cc, which contains some theortical notes,
-// or http://github.com/sinya8282/RANS
+DEFINE_bool(dump_expr, false, "Dump Expr-tree.");
+DEFINE_bool(dump_dfa, false, "Dump DFA as dot language.");
+DEFINE_bool(dump_matrix, false, "Dump Matrix.");
+DEFINE_bool(minimize, true, "Minimize a DFA.");
 
 namespace rans {
 
-// RANS parsing rules (simplified extended syntax)
-// regex      ::= union EOP
-// union      ::= parse1 ('|' parse1)*
-// concat     ::= parse1+
-// repetition ::= atom quantifier* # repetition
-// quantifier ::= [*+?] | '{' (digit | digit? ',' digit? ) '}'
-// digit      ::= [0-9]+
-// atom       ::= LITERAL | DOT | charclass | '(' union ')'
-// charclass  ::= '[' ']'
+const std::string SYNTAX = "\
+RANS \"simplified\" extended regular expression syntax:    \n\
+  regex      ::= union* EOP                                \n\
+  union      ::= concat ('|' concat)*                      \n\
+  concat     ::= repetition+                               \n\
+  repetition ::= atom quantifier*                          \n\
+  quantifier ::= [*+?] | '{' (\\d+ | \\d* ',' \\d* ) '}'   \n\
+  atom       ::= literal | dot | charclass | '(' union ')' \n\
+  charclass  ::= '[' []^-]? LITERAL*  ']'                  \n\
+  literal    ::= [^*+?[\\]|] # not special synbols          \n\
+  dot        ::= '.' # dot matchs any 1-byte (also '\\n')  \n\
+";
 
 class Parser {
  public:
@@ -123,12 +126,14 @@ class Parser {
   bool lex_is_quantifier();
   Expr_t consume_repetition();
   Expr_t consume_metachar();
+
   void parse();
   Expr* parse_union();
   Expr* parse_concat();
   Expr* parse_repetition();
   Expr* parse_atom();
   Expr* parse_charclass();
+
   void fill_transition(Expr *);
   void connect(std::set<Expr*>, std::set<Expr*>);
 
@@ -148,7 +153,10 @@ class Parser {
 
 const int Parser::repeat_infinitely = -1;
 
-Parser::Expr* Parser::expr(std::size_t index) { return index < _expr_tree.size() ? &_expr_tree[index] : NULL; }
+Parser::Expr* Parser::expr(std::size_t index)
+{
+  return index < _expr_tree.size() ? &_expr_tree[index] : NULL;
+}
 
 void Parser::Expr::init(Expr_t t, Expr* lhs_ = NULL, Expr* rhs_ = NULL)
 {
@@ -189,7 +197,8 @@ void Parser::Expr::init(Expr_t t, Expr* lhs_ = NULL, Expr* rhs_ = NULL)
 
 std::ostream& operator<<(std::ostream& stream, const std::set<Parser::Expr*>& expr_set)
 {
-  for (std::set<Parser::Expr*>::iterator iter = expr_set.begin(); iter != expr_set.end(); ++iter) {
+  for (std::set<Parser::Expr*>::iterator iter = expr_set.begin();
+       iter != expr_set.end(); ++iter) {
     stream << (*iter)->id << ", ";
   }
   return stream;
@@ -698,7 +707,6 @@ class DFA {
   bool is_accept(int state) const { return state != REJECT && _states[state].accept; }
   const State& operator[](std::size_t i) const { return _states[i]; }
   State& operator[](std::size_t i) { return _states[i]; }
-  void dump();
   void minimize();
   bool operator==(const DFA&) const;
   friend std::ostream& operator<<(std::ostream& stream, const DFA& dfa);
@@ -744,8 +752,6 @@ bool DFA::operator==(const DFA& lhs) const
   
   return true;
 }
-
-void DFA::dump() { std::cout << *this << std::endl; }
 
 std::ostream& operator<<(std::ostream& stream, const DFA& dfa)
 {
@@ -951,11 +957,13 @@ void DFA::minimize()
   _states.resize(minimum_size);
 }
 
+typedef mpz_class Value;
+
 #ifdef RANS_USE_UBLAS
-typedef boost::numeric::ublas::matrix<mpz_class> MPMatrix;
-typedef boost::numeric::ublas::identity_matrix<mpz_class> MPIdentityMatrix;
-typedef boost::numeric::ublas::vector<mpz_class> MPVector;
-typedef boost::numeric::ublas::zero_vector<mpz_class> MPZeroVector;
+typedef boost::numeric::ublas::matrix<Value> MPMatrix;
+typedef boost::numeric::ublas::identity_matrix<Value> MPIdentityMatrix;
+typedef boost::numeric::ublas::vector<Value> MPVector;
+typedef boost::numeric::ublas::zero_vector<Value> MPZeroVector;
 
 MPMatrix& prod(MPMatrix& X, const MPMatrix& Y)
 {
@@ -977,7 +985,7 @@ MPVector& prod(const MPVector& V, const MPMatrix& X, MPVector& W)
   return W = boost::numeric::ublas::prod(V, X);
 }
 
-mpz_class& inner_prod(const MPVector& V, const MPVector& W, mpz_class& v)
+Value& inner_prod(const MPVector& V, const MPVector& W, Value& v)
 {
   return v = boost::numeric::ublas::inner_prod(V, W);
 }
@@ -995,13 +1003,13 @@ class MPMatrix {
   void clear();
   void init();
   void swap(MPMatrix &M) { m.swap(M.m); }
-  mpz_class& operator()(std::size_t i, std::size_t j) { return m[i*_size+j]; }
-  const mpz_class& operator()(std::size_t i, std::size_t j) const { return m[i*_size+j]; }
+  Value& operator()(std::size_t i, std::size_t j) { return m[i*_size+j]; }
+  const Value& operator()(std::size_t i, std::size_t j) const { return m[i*_size+j]; }
   MPMatrix& operator*=(const MPMatrix&);
  private:
   // fields
   std::size_t _size;
-  std::vector<mpz_class> m;
+  std::vector<Value> m;
 };
 
 class MPIdentityMatrix: public MPMatrix {
@@ -1062,19 +1070,19 @@ class MPVector {
   friend std::ostream& operator<<(std::ostream& stream, const MPMatrix& matrix);  
   void resize(std::size_t size) { _size = size; _v.resize(size); }
   std::size_t size() const { return _size; }
-  mpz_class& operator[](std::size_t i) { return _v[i]; }
-  const mpz_class& operator[](std::size_t i) const { return _v[i]; }
+  Value& operator[](std::size_t i) { return _v[i]; }
+  const Value& operator[](std::size_t i) const { return _v[i]; }
   void clear() { for (std::size_t i = 0; i < size(); i++) _v[i] = 0; }
   MPVector& operator*=(const MPMatrix &X);
  private:
   // fields
   std::size_t _size;
-  std::vector<mpz_class> _v;
+  std::vector<Value> _v;
 };
 
 MPVector& MPVector::operator*=(const MPMatrix &X)
 {
-  std::vector<mpz_class> v(size());
+  std::vector<Value> v(size());
   for (std::size_t i = 0; i < size(); i++) {
     for (std::size_t j = 0; j < size(); j++) {
       v[i] += _v[j] * X(j, i);
@@ -1130,12 +1138,12 @@ MPVector& prod(const MPVector& V, const MPMatrix& X, MPVector& W)
   return W;
 }
 
-mpz_class& inner_prod(const MPVector& V, const MPVector& W, mpz_class& v)
+Value& inner_prod(const MPVector& V, const MPVector& W, Value& v)
 {
   for (std::size_t i = 0; i < V.size(); i++) v += V[i] * W[i];
   return v;
 }
-#endif
+#endif // RANS_USE_UBLAS
 
 // return Y = X^n, O(|X|^3 log n)-s factor-wise multiplications.
 MPMatrix& power(const MPMatrix& X, std::size_t n, MPMatrix& Y)
@@ -1152,15 +1160,24 @@ MPMatrix& power(const MPMatrix& X, std::size_t n, MPMatrix& Y)
 
 class RANS {
  public:
+  typedef rans::Value Value;
   RANS(const std::string &);
-  mpz_class& val(const std::string&, mpz_class &) const;
-  mpz_class val(const std::string& text) const { mpz_class value; return val(text, value); }
-  std::string& rep(const mpz_class&, std::string &) const;
-  std::string rep(const mpz_class& value) const { std::string text; return rep(value, text); }
+  Value& val(const std::string&, Value&) const;
+  Value val(const std::string& text) const { Value value; return val(text, value); }
+  std::string& rep(const Value&, std::string &) const;
+  std::string rep(const Value& value) const { std::string text; return rep(value, text); }
   std::size_t size() const { return _dfa.size(); }
-  std::size_t floor(mpz_class&) const;
   const DFA& dfa() const { return _dfa; }
+  // useful aliases for val & rep
+  Value& operator()(const std::string& text, Value& value) const { return val(text, value); }
+  Value operator()(const std::string& text) const { return val(text); }
+  std::string& operator()(const Value& value, std::string& text) const { return rep(value, text); }
+  std::string operator()(const Value& value) const { return rep(value); }
+  // write and read value function
+  static void write(const std::string&, Value&);
+  static void read(const std::string&, Value&);
  private:
+  std::size_t floor(Value&) const;
   // fields
   DFA _dfa;
   MPMatrix _adjacency_matrix;
@@ -1199,7 +1216,7 @@ RANS::RANS(const std::string &regex): _dfa(regex)
   if (FLAGS_dump_matrix) std::cout << _adjacency_matrix << std::endl;
 }
 
-mpz_class& RANS::val(const std::string& text, mpz_class& value) const
+RANS::Value& RANS::val(const std::string& text, Value& value) const
 {
   int state = DFA::START;
   value = 0;
@@ -1224,7 +1241,55 @@ mpz_class& RANS::val(const std::string& text, mpz_class& value) const
   return value;
 }
 
-std::size_t RANS::floor(mpz_class& value) const
+std::string& RANS::rep(const Value& value, std::string& text) const
+{
+  MPMatrix tmpM(size(), size());
+  MPVector V(size()), tmpV(size());
+  int state = DFA::START;
+  Value value_ = value, val, val_;
+  std::size_t len = floor(value_);
+  text = "";
+
+  for (; len > 0; len--) {
+    if (len == 1) {
+      std::size_t val = 0;
+      for (std::size_t c = 0; c < 256; c++) {
+        int next = _dfa[state][c];
+        if (_dfa.is_accept(next) && ++val > value_) {
+          text.append(1, c); // complete, text == rep(value).
+          break;
+        }
+      }
+
+      break;
+    }
+    
+    val = val_ = 0;
+    V.clear();
+    power(_adjacency_matrix, len - 1, tmpM);
+
+    for (std::size_t c = 0; c < 256; c++) {
+      int next = _dfa[state][c];
+      if (next == DFA::REJECT) continue;
+
+      val_ = val; // save before value
+      for (std::size_t i = 0; i < size(); i++) {
+        if (_dfa.is_accept(i)) val += tmpM(next, i);
+      }
+
+      if (val > value_) {
+        text.append(1, c);
+        state = next;
+        value_ -= val_;
+        break;
+      }
+    }
+  }
+
+  return text;
+}
+
+std::size_t RANS::floor(Value& value) const
 {
   const int match_epsilon = _dfa.is_accept(DFA::START) ? 1 : 0;
   if (value < match_epsilon) return 0;
@@ -1257,57 +1322,29 @@ std::size_t RANS::floor(mpz_class& value) const
   return length;
 }
 
-std::string& RANS::rep(const mpz_class& value, std::string& text) const
+void RANS::write(const std::string& filename, Value& value)
 {
-  MPMatrix tmpM(size(), size());
-  MPVector V(size()), tmpV(size());
-  int state = DFA::START;
-  mpz_class value_ = value, val, val_;
-  std::size_t len = floor(value_);
+  FILE* file = fopen(filename.data(), "w");
+  mpz_out_raw(file, value.get_mpz_t());
+  fclose(file);
+}
 
-  for (text = ""; len > 0; len--) {
-    if (len == 1) {
-      std::size_t val = 0;
-      for (std::size_t c = 0; c < 256; c++) {
-        int next = _dfa[state][c];
-        if (_dfa.is_accept(next) && ++val > value_) {
-          text.append(1, c); // complete, text == rep(value).
-          break;
-        }
-      }
-    } else {
-      val = val_ = 0;
-      V.clear();
-      power(_adjacency_matrix, len - 1, tmpM);
-
-      for (std::size_t c = 0; c < 256; c++) {
-        int next = _dfa[state][c];
-        if (next == DFA::REJECT) continue;
-
-        val_ = val; // save before value
-        for (std::size_t i = 0; i < size(); i++) {
-          if (_dfa.is_accept(i)) val += tmpM(next, i);
-        }
-
-        if (val > value_) {
-          text.append(1, c);
-          state = next;
-          value_ -= val_;
-          break;
-        }
-      }
-    }
-  }
-
-  return text;
+void RANS::read(const std::string& filename, Value& value)
+{
+  FILE* file = fopen(filename.data(), "r");
+  mpz_inp_raw(value.get_mpz_t(), file);
+  fclose(file);
 }
 
 } // namespace rans
 
 using rans::RANS; // export
 
-void dump(mpz_class& v) { std::cout << v << std::endl; }
+#ifdef RANS_DEBUG // wrappers for gdb
+void dump(rans::DFA &v) { std::cout << v << std::endl; }
+void dump(rans::Value& v) { std::cout << v << std::endl; }
 void dump(rans::MPVector& v) { std::cout << v << std::endl; }
 void dump(rans::MPMatrix& v) { std::cout << v << std::endl; }
+#endif // RANS_DEBUG
 
 #endif // RANS_H_

@@ -138,7 +138,7 @@ class Parser {
   void connect(std::set<Expr*>, std::set<Expr*>);
 
   // fields
-  static const int repeat_infinitely;
+  static const int repeat_infinitely = -1;
   std::string _regex;
   const unsigned char* _regex_begin;
   const unsigned char* _regex_end;
@@ -150,8 +150,6 @@ class Parser {
   int _repeat_min, _repeat_max;
   Expr_t _token;
 };
-
-const int Parser::repeat_infinitely = -1;
 
 Parser::Expr* Parser::expr(std::size_t index)
 {
@@ -700,7 +698,7 @@ class DFA {
     int operator[](std::size_t i) const { return t[i]; }
     int& operator[](std::size_t i) { return t[i]; }
   };
-  DFA(const std::string &);
+  DFA(const std::string &, bool);
   std::size_t size() const { return _states.size(); }
   const State& state(std::size_t i) const { return _states[i]; }
   State& state(std::size_t i) { return _states[i]; }
@@ -804,10 +802,11 @@ std::string& rans::DFA::pretty(unsigned char c, std::string &label)
   return label = label_.str();
 }
 
-DFA::DFA(const std::string &regex)
+DFA::DFA(const std::string &regex, bool do_minimize = false)
 {
   Parser p(regex);
   construct(p.expr_tree());
+  if (do_minimize) minimize();
 }
 
 void DFA::construct(Parser::Expr* expr_tree)
@@ -1066,17 +1065,16 @@ std::ostream& operator<<(std::ostream& stream, const MPMatrix& matrix)
 
 class MPVector {
  public:
-  MPVector(std::size_t size = 0): _size(size), _v(size) {}
+  MPVector(std::size_t size = 0): _v(size) {}
   friend std::ostream& operator<<(std::ostream& stream, const MPMatrix& matrix);  
-  void resize(std::size_t size) { _size = size; _v.resize(size); }
-  std::size_t size() const { return _size; }
+  void resize(std::size_t size) { _v.resize(size); }
+  std::size_t size() const { return _v.size(); }
   Value& operator[](std::size_t i) { return _v[i]; }
   const Value& operator[](std::size_t i) const { return _v[i]; }
   void clear() { for (std::size_t i = 0; i < size(); i++) _v[i] = 0; }
   MPVector& operator*=(const MPMatrix &X);
  private:
   // fields
-  std::size_t _size;
   std::vector<Value> _v;
 };
 
@@ -1182,17 +1180,16 @@ class RANS {
   DFA _dfa;
   MPMatrix _adjacency_matrix;
   MPMatrix _extended_adjacency_matrix;
-  int _extended_state;
+  const int _extended_state;
   MPVector _start_vector;
   MPVector _accept_vector;
 };
 
-RANS::RANS(const std::string &regex): _dfa(regex)
+RANS::RANS(const std::string &regex): _dfa(regex, true), _extended_state(_dfa.size())
 {
   if (FLAGS_minimize) _dfa.minimize();
   _adjacency_matrix.resize(size(), size());
   _extended_adjacency_matrix.resize(size()+1, size()+1);
-  _extended_state = size();
   _start_vector.resize(size());
   _start_vector[DFA::START] = 1;
   _accept_vector.resize(size());

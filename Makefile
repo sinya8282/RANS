@@ -4,11 +4,11 @@ MATRIX_LIB=SELF #or UBLAS
 CC=g++
 
 ifeq ($(MODE),DEBUG)
-CFLAGS=-O0 -g3 -Wall -I$(PWD) -I$(PWD)/test -DRANS_USE_$(MATRIX_LIB) -DRANS_DEBUG
+CFLAGS=-O0 -g3 -Wall -I$(PWD) -DRANS_USE_$(MATRIX_LIB) -DRANS_DEBUG
 else
-CFLAGS=-O3 -Wall -I$(PWD) -I$(PWD)/test -DRANS_USE_$(MATRIX_LIB)
+CFLAGS=-O3 -Wall -I$(PWD) -DRANS_USE_$(MATRIX_LIB)
 endif
-LFLAGS=-lgmp -lgmpxx -lgflags
+LFLAGS=-lgmp -lgmpxx -lgflags -lgtest -lgtest_main
 prefix=/usr/local
 
 all: test rans 
@@ -16,7 +16,7 @@ rans: bin/rans
 test: bin/test
 
 check: test
-	@bin/test
+	@bin/test --gtest_color=yes
 
 bin/rans: rans.hpp test/rans.cc Makefile
 	@mkdir -p bin
@@ -24,7 +24,7 @@ bin/rans: rans.hpp test/rans.cc Makefile
 
 bin/test: rans.hpp test/test.cc Makefile
 	@mkdir -p bin
-	$(CC) $(CFLAGS) test/test.cc test/gtest-all.cc test/gtest_main.cc -o $@ $(LFLAGS)
+	$(CC) $(CFLAGS) test/test.cc -o $@ $(LFLAGS)
 
 install: rans.hpp
 	cp rans.hpp $(prefix)/include

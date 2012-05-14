@@ -17,20 +17,32 @@
 // RANS - Implementation of Abstract-Numeration-System(ANS) on regular language.
 // This header file consists of mainly three parts described below.
 //
-// rans::DFA (and Parse), is simple DFA implementation.
+// rans::DFA (and Parse) is simple DFA implementation.
 // Parse recognizes simplified extended regular expression.
 //
-// rans::MPMatrix (and MPVector) is Multi-Precision Integer Matrix/Vector
+// rans::MPMatrix (and MPVector) is Multi-Precision Integer Matrix and Vector
 // implementation. it's necessary to calculate both value and representation
-// on ANS. I implemented ANS by using adjacency matrix of DFA.
+// on ANS. I implemented ANS by using a adjacency matrix of DFA.
 //
-// rans::RANS is main class, which would be exported (using rans::RANS).
-// users can use this simply just like 'RANS r(regex);'.
+// rans::RANS, which has essential function val() and rep(), is main class.
+// - val(text) returns a number N that means 'given text is Nth acceptable string
+//   in regular languages'
+// - rep(value), which is inverse function of val(text), returns a correspoinding
+//   string.
+// Example:
+// rans::RANS r1("(ab)*"); r.rep(3)=="ababab"; r.val("")==0; r.val("ab")==1;
+// rans::RANS r1("a*(b*|c*)"); r.rep(1)=="a"; r.rep(4)=="aa"; r.val("aaa")==9;
 //
-// To see more details/usage, you could check test/rans.cc, which is
-// RANS simple demo program, and test/test.cc, which contains some theortical notes,
-// or my github repo http://github.com/sinya8282/RANS
-// also see Prof.Michel Rigo's great publications about ANS, for more theoretical asspects.
+// This class would be exported (using rans::RANS), so users can use simply
+// just like 'RANS r(regex); RANS::Value value = r(text);'.
+//
+// To see more detail and usage, you could check RANS/test/rans.cc, which is
+// RANS simple program, and RANS/test/test.cc, which contains some theortical
+// notes. RANS github repository is http://github.com/sinya8282/RANS
+//
+// Also, you can get more interesting, thoretical aspects by Berthé and Rigo's
+// great book - "Combinatorics, Automata and Number Theory".
+
 
 #include <iostream>
 #include <sstream>
@@ -59,10 +71,10 @@
 #endif
 
 #include <gflags/gflags.h>
-DEFINE_bool(dump_expr, false, "Dump Expr-tree.");
-DEFINE_bool(dump_dfa, false, "Dump DFA as dot language.");
-DEFINE_bool(dump_matrix, false, "Dump Matrix.");
-DEFINE_bool(minimize, true, "Minimize a DFA.");
+DEFINE_bool(dump_expr, false, "dump Expr-tree.");
+DEFINE_bool(dump_dfa, false, "dump DFA as dot language.");
+DEFINE_bool(dump_matrix, false, "dump Matrix.");
+DEFINE_bool(minimize, true, "minimize a DFA.");
 
 namespace rans {
 
@@ -583,6 +595,10 @@ Parser::Expr* Parser::parse_atom()
       e = parse_charclass();
       break;
     }
+    case kDot: {
+      e = new_expr(kDot);
+      break;
+    }
     case kByteRange: {
       e = new_expr(kCharClass);
       e->cc_table = _cc_table;
@@ -702,7 +718,8 @@ class DFA {
   std::size_t size() const { return _states.size(); }
   const State& state(std::size_t i) const { return _states[i]; }
   State& state(std::size_t i) { return _states[i]; }
-  bool is_accept(int state) const { return state != REJECT && _states[state].accept; }
+  bool is_acceptable(int state) const { return state != REJECT && _states[state].accept; }
+  bool is_acceptable(const std::string&) const;
   const State& operator[](std::size_t i) const { return _states[i]; }
   State& operator[](std::size_t i) { return _states[i]; }
   void minimize();
@@ -865,7 +882,7 @@ void DFA::fill_transition(Parser::Expr* expr, std::vector<DFA::Subset>& transiti
     }
     case Parser::kDot: {
       for (std::size_t c = 0; c < 256; c++) {
-        std::fill(transition.begin(), transition.end(), expr->follow);
+        transition[c].insert(expr->follow.begin(), expr->follow.end());
       }
       break;
     }
@@ -955,6 +972,18 @@ void DFA::minimize()
 
   _states.resize(minimum_size);
 }
+
+bool DFA::is_acceptable(const std::string& text) const
+{
+  int state = START;
+  for (std::size_t i = 0; i < text.length(); i++) {
+    state = _states[state][text[i]];
+    if (state == REJECT) return false;
+  }
+
+  return is_acceptable(state);
+}
+
 
 typedef mpz_class Value;
 
@@ -1195,13 +1224,13 @@ RANS::RANS(const std::string &regex): _dfa(regex, true), _extended_state(_dfa.si
   _accept_vector.resize(size());
   
   for (std::size_t i = 0; i < size(); i++) {
-    if (_dfa.is_accept(i)) _accept_vector[i] = 1;
+    if (_dfa.is_acceptable(i)) _accept_vector[i] = 1;
 
     for (std::size_t c = 0; c < 256; c++) {
       if (_dfa[i][c] != DFA::REJECT) {
         _adjacency_matrix(i, _dfa[i][c])++;
         _extended_adjacency_matrix(i, _dfa[i][c])++;
-        if (_dfa.is_accept(_dfa[i][c])) {
+        if (_dfa.is_acceptable(_dfa[i][c])) {
           _extended_adjacency_matrix(i, _extended_state)++;
         }
       }
@@ -1231,7 +1260,7 @@ RANS::Value& RANS::val(const std::string& text, Value& value) const
     }
   }
 
-  if (state == DFA::REJECT || !_dfa.is_accept(state)) throw "text is not acceptable";
+  if (state == DFA::REJECT || !_dfa.is_acceptable(state)) throw "text is not acceptable";
 
   inner_prod(paths, _accept_vector, value);
   
@@ -1252,7 +1281,7 @@ std::string& RANS::rep(const Value& value, std::string& text) const
       std::size_t val = 0;
       for (std::size_t c = 0; c < 256; c++) {
         int next = _dfa[state][c];
-        if (_dfa.is_accept(next) && ++val > value_) {
+        if (_dfa.is_acceptable(next) && ++val > value_) {
           text.append(1, c); // complete, text == rep(value).
           break;
         }
@@ -1271,7 +1300,7 @@ std::string& RANS::rep(const Value& value, std::string& text) const
 
       val_ = val; // save before value
       for (std::size_t i = 0; i < size(); i++) {
-        if (_dfa.is_accept(i)) val += tmpM(next, i);
+        if (_dfa.is_acceptable(i)) val += tmpM(next, i);
       }
 
       if (val > value_) {
@@ -1288,7 +1317,7 @@ std::string& RANS::rep(const Value& value, std::string& text) const
 
 std::size_t RANS::floor(Value& value) const
 {
-  const int match_epsilon = _dfa.is_accept(DFA::START) ? 1 : 0;
+  const int match_epsilon = _dfa.is_acceptable(DFA::START) ? 1 : 0;
   if (value < match_epsilon) return 0;
 
   MPMatrix tmpM(size()+1, size()+1), tmpM_(size()+1, size()+1);

@@ -5,16 +5,17 @@
 #include <string>
 #include <gflags/gflags.h>
 
-DEFINE_string(f, "", "Obtain patterns from FILE.");
-DEFINE_bool(size, false, "Print DFA's size.");
-DEFINE_bool(repl, false, "Start REPL.");
-DEFINE_string(text, "", "Print value of given text on ANS.");
-DEFINE_string(value, "", "Print text of given value on ANS.");
-DEFINE_bool(verbose, false, "Report additional informations.");
-DEFINE_bool(syntax, false, "Print RANS regular expression syntax.");
-DEFINE_string(encode, "", "Encode given file.");
-DEFINE_string(decode, "", "Decode given file");
-DEFINE_string(out, "", "Output file name.");
+DEFINE_string(f, "", "obtain patterns from FILE.");
+DEFINE_string(text, "", "print value of given text on ANS.");
+DEFINE_string(value, "", "print text of given value on ANS.");
+DEFINE_bool(verbose, false, "report additional informations.");
+DEFINE_bool(syntax, false, "print RANS regular expression syntax.");
+DEFINE_string(encode, "", "encode given file.");
+DEFINE_string(quick_check, "", "check wheter given text is acceptable.");
+DEFINE_string(decode, "", "decode given file");
+DEFINE_string(out, "", "output file name.");
+DEFINE_bool(size, false, "print DFA's size.");
+DEFINE_bool(repl, false, "start REPL.");
 
 void set_filename(const std::string& src, std::string& dst)
 {
@@ -45,7 +46,8 @@ void set_filename(const std::string& src, std::string& dst)
 int main(int argc, char* argv[])
 {
   google::SetUsageMessage(
-      "Usage: rans REGEX [OPTION]...\n"
+      "RANS driver program.\n"
+      "Usage: rans REGEX [OPTIONS ...] \n"
       "You can check RANS extended regular expression syntax by '--syntax' option.\n\n"
       "OPTIONS:");
   google::ParseCommandLineFlags(&argc, &argv, true);
@@ -67,7 +69,14 @@ int main(int argc, char* argv[])
 
   try {
     RANS r(regex);
-    if (FLAGS_encode != "") {
+
+    if (FLAGS_quick_check != "") {
+      if (r.dfa().is_acceptable(FLAGS_quick_check)) {
+        std::cout << "text is acceptable." << std::endl;
+      } else {
+        std::cout << "text is not acceptable." << std::endl;
+      }
+    } else if (FLAGS_encode != "") {
       std::string text; RANS::Value value;
       std::ifstream ifs(FLAGS_encode.data());
       ifs >> text;
@@ -82,7 +91,7 @@ int main(int argc, char* argv[])
       std::ofstream ofs(FLAGS_out.data());
       ofs << r(value, text);
     } else if (FLAGS_size) {
-      std::cout << "Size of DFA: " << r.dfa().size() << std::endl;
+      std::cout << "size of DFA: " << r.dfa().size() << std::endl;
     } else if (FLAGS_value != "") {
       try {
         std::cout << r(RANS::Value(FLAGS_value)) << std::endl;

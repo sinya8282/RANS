@@ -1,3 +1,5 @@
+# RANS make rules. REQUIRES: gmpxx, gflags, gtest
+
 MODE=RELEASE #or DEBUG
 MATRIX_LIB=SELF #or UBLAS
 
@@ -8,6 +10,7 @@ CFLAGS=-O0 -g3 -Wall -I$(PWD) -DRANS_USE_$(MATRIX_LIB) -DRANS_DEBUG
 else
 CFLAGS=-O3 -Wall -I$(PWD) -DRANS_USE_$(MATRIX_LIB)
 endif
+
 LFLAGS=-lgmp -lgmpxx -lgflags -lgtest -lgtest_main
 prefix=/usr/local
 

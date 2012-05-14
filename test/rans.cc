@@ -10,6 +10,7 @@ DEFINE_string(text, "", "print value of given text on ANS.");
 DEFINE_string(value, "", "print text of given value on ANS.");
 DEFINE_bool(verbose, false, "report additional informations.");
 DEFINE_bool(syntax, false, "print RANS regular expression syntax.");
+DEFINE_bool(utf8, false, "use utf8 as internal encoding.");
 DEFINE_string(encode, "", "encode given file.");
 DEFINE_string(quick_check, "", "check wheter given text is acceptable.");
 DEFINE_string(decode, "", "decode given file");
@@ -43,7 +44,9 @@ int main(int argc, char* argv[])
     exit(0);
   }
 
-  RANS r(regex);
+  RANS::Encoding enc = FLAGS_utf8 ? RANS::UTF8 : RANS::ASCII;
+  RANS r(regex, enc);
+
   if (!r.ok()) {
     std::cout << r.error() << std::endl;
     exit(0);

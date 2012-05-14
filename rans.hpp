@@ -86,16 +86,55 @@ RANS \"simplified\" extended regular expression syntax:    \n\
   repetition ::= atom quantifier*                          \n\
   quantifier ::= [*+?] | '{' (\\d+ | \\d* ',' \\d* ) '}'   \n\
   atom       ::= literal | dot | charclass | '(' union ')' \n\
-  charclass  ::= '[' []^-]? LITERAL*  ']'                  \n\
-  literal    ::= [^*+?[\\]|] # not special synbols          \n\
-  dot        ::= '.' # dot matchs any 1-byte (also '\\n')  \n\
+                 utf8char # optional (--utf8)              \n\
+  charclass  ::= '[' ']'? [^]]* ']'                        \n\
+  literal    ::= [^*+?[\\]|] # not special synbols         \n\
+  dot        ::= '.' # NOTE: dot matchs also newline('\\n')\n\
+  utf8char   ::= [\\x00-\\x7f] | [\\xC0-\\xDF][\\x80-\\xBF]\n\
+               | [\\xE0-\\xEF][\\x80-\\xBF]{2}             \n\
+               | [\\xF0-\\xF7][\\x80-\\xBF]{3}             \n\
 ";
+
+enum Encoding {
+  ASCII = 0, // default
+  UTF8 = 1
+};
+
+std::size_t utf8_byte_length(const unsigned char c)
+{
+  static const std::size_t len[] = {
+    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+    2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,
+    3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,
+    4,4,4,4,4,4,4,4,
+    0,0,0,0,0,0,0,0
+  };
+
+  return len[c];
+}
+
+bool is_valid_utf8_sequence(const unsigned char *s)
+{
+  std::size_t len = utf8_byte_length(*s);
+  if (len == 0) return false;
+
+  for (std::size_t i = 1; i < len; i++) {
+    if (!(0x80 <= *(s+i) && *(s+i) <= 0xBF)) return false;
+  }
+
+  return true;
+}
 
 class Parser {
  public:
   enum ExprType {
-    kLiteral = 0, kDot, kCharClass,
-    kConcat, kUnion, 
+    kLiteral = 0, kDot, kCharClass, kUTF8,
+    kConcat, kUnion,
     kStar, kPlus, kRepetition, kQmark,
     kEOP, kLpar, kRpar, kByteRange, kEpsilon,
     kBadExpr
@@ -123,7 +162,7 @@ class Parser {
     friend std::ostream& operator<<(std::ostream&, Expr&);
   };
   
-  Parser(const std::string &);
+  Parser(const std::string &, Encoding);
   Expr* expr_tree() { return _expr_root; }
   Expr* expr(std::size_t);
   Expr* new_expr(ExprType, Expr*, Expr*);
@@ -159,6 +198,7 @@ class Parser {
   bool _ok;
   std::string _error;
   std::string _regex;
+  Encoding _encoding;
   const unsigned char* _regex_begin;
   const unsigned char* _regex_end;
   const unsigned char* _regex_ptr;
@@ -258,7 +298,7 @@ std::ostream& operator<<(std::ostream& stream, Parser::Expr& expr)
 const char* Parser::Expr::type_name()
 {
   static const char* type_name_[] = {
-    "Literal", "Dot", "CharClass", 
+    "Literal", "Dot", "CharClass", "UTF8",
     "Concat", "Union", 
     "kStar", "kPlus", "kRepetition", "kQmark",
     "kEOP", "kLpar", "kRpar", "kByteRange", "kEpsilon",
@@ -295,7 +335,7 @@ Parser::Expr* Parser::clone_expr(Expr* orig)
   return clone;
 }
 
-Parser::Parser(const std::string& regex): _ok(true), _regex(regex)
+Parser::Parser(const std::string& regex, Encoding enc): _ok(true), _regex(regex), _encoding(enc)
 {
   _regex_begin = _regex_ptr = reinterpret_cast<const unsigned char*>(_regex.data());
   _regex_end = reinterpret_cast<const unsigned char*>(_regex.data()) + _regex.length();
@@ -328,7 +368,13 @@ Parser::ExprType Parser::consume()
     case '{': consume_char(); _token = consume_repetition(); break;
     case '\\': consume_char(); _token = consume_metachar();  break;
     default:
-      _token = kLiteral;
+      if (_encoding == UTF8 && utf8_byte_length(_literal) != 1) {
+        if (!is_valid_utf8_sequence(_regex_ptr)) throw "invalid utf8 sequence";
+        _token = kUTF8;
+        return _token;
+      } else {
+        _token = kLiteral;
+      }
       break;
   }
 
@@ -359,6 +405,7 @@ bool Parser::lex_is_atom()
   switch (lex()) {
     case kLiteral: case kCharClass: case kDot:
     case kByteRange: case kEpsilon: case kLpar:
+    case kUTF8:
       return true;
     default: return false;
   }
@@ -620,6 +667,19 @@ Parser::Expr* Parser::parse_atom()
       e = new_expr(kEpsilon);
       break;
     }
+    case kUTF8: {
+      unsigned char top = _literal;
+      e = new_expr(kLiteral);
+      e->literal = top;
+      for (std::size_t i = 1; i < utf8_byte_length(top); i++) {
+        Expr* f = new_expr(kLiteral);
+        f->literal = consume_char();
+        Expr* g = new_expr(kConcat, e, f);
+        e = g;
+      }
+      consume_char();
+      break;
+    }
     case kLpar: {
       consume();
       e = parse_union();
@@ -728,7 +788,7 @@ class DFA {
     int operator[](std::size_t i) const { return t[i]; }
     int& operator[](std::size_t i) { return t[i]; }
   };
-  DFA(const std::string &, bool);
+  DFA(const std::string&, Encoding, bool);
   bool ok() const { return _ok; }
   const std::string& error() const { return _error; }
   std::size_t size() const { return _states.size(); }
@@ -837,9 +897,9 @@ std::string& rans::DFA::pretty(unsigned char c, std::string &label)
   return label = label_.str();
 }
 
-DFA::DFA(const std::string &regex, bool do_minimize = true): _ok(true)
+DFA::DFA(const std::string &regex, Encoding enc = ASCII, bool do_minimize = true): _ok(true)
 {
-  Parser p(regex);
+  Parser p(regex, enc);
   if (!p.ok()) {
     _ok = false;
     _error = p.error();
@@ -1225,8 +1285,9 @@ MPMatrix& power(const MPMatrix& X, std::size_t n, MPMatrix& Y)
 
 class RANS {
  public:
+  enum Encoding { ASCII = 0, UTF8 = 1 };
   typedef rans::Value Value;
-  RANS(const std::string &);
+  RANS(const std::string&, Encoding);
   bool ok() const { return _ok; }
   const std::string& error() const { return _error; }
   bool is_acceptable(const std::string& text) const { return _dfa.is_acceptable(text); }
@@ -1260,7 +1321,7 @@ class RANS {
   MPVector _accept_vector;
 };
 
-RANS::RANS(const std::string &regex): _ok(true), _dfa(regex), _extended_state(_dfa.size())
+RANS::RANS(const std::string &regex, Encoding enc = ASCII): _ok(true), _dfa(regex, rans::Encoding(enc)), _extended_state(_dfa.size())
 {
   if (!_dfa.ok()) {
     _ok = false;

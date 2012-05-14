@@ -29,9 +29,9 @@
 //   in regular languages'
 // - rep(value), which is inverse function of val(text), returns a correspoinding
 //   string.
-// Example:
-// rans::RANS r1("(ab)*"); r.rep(3)=="ababab"; r.val("")==0; r.val("ab")==1;
-// rans::RANS r1("a*(b*|c*)"); r.rep(1)=="a"; r.rep(4)=="aa"; r.val("aaa")==9;
+// examples: rans::RANS r1("(ab)*"); rans::RANS r2("a*(b*|c*)");
+//           r1.rep(3)=="ababab"; r1.val("")==0; r1.val("ab")==1;
+//           r2.rep(1)=="a"; r2.rep(4)=="aa"; r2.val("aaa")==9;
 //
 // This class would be exported (using rans::RANS), so users can use simply
 // just like 'RANS r(regex); RANS::Value value = r(text);'.
@@ -54,6 +54,7 @@
 #include <set>
 #include <map>
 #include <algorithm>
+#include <exception>
 
 // External libraries: gmp(gmpxx), gflags, (Boost.uBLAS if you choose)
 #include <gmpxx.h>
@@ -74,7 +75,6 @@
 DEFINE_bool(dump_expr, false, "dump Expr-tree.");
 DEFINE_bool(dump_dfa, false, "dump DFA as dot language.");
 DEFINE_bool(dump_matrix, false, "dump Matrix.");
-DEFINE_bool(minimize, true, "minimize a DFA.");
 
 namespace rans {
 
@@ -93,22 +93,23 @@ RANS \"simplified\" extended regular expression syntax:    \n\
 
 class Parser {
  public:
-  enum Expr_t {
-    kLiteral = 0, kDot, kCharClass, 
+  enum ExprType {
+    kLiteral = 0, kDot, kCharClass,
     kConcat, kUnion, 
     kStar, kPlus, kRepetition, kQmark,
-    kEOP, kLpar, kRpar, kByteRange, kEpsilon
+    kEOP, kLpar, kRpar, kByteRange, kEpsilon,
+    kBadExpr
   };
   struct Expr {
     Expr() { type = kEpsilon; lhs = rhs = NULL; }
-    Expr(Expr_t t, Expr* lhs = NULL, Expr* rhs = NULL) { init(t, lhs, rhs); }
-    void init(Expr_t, Expr*, Expr*);
+    Expr(ExprType t, Expr* lhs = NULL, Expr* rhs = NULL) { init(t, lhs, rhs); }
+    void init(ExprType, Expr*, Expr*);
     void set_union(std::set<Expr*> &src1, std::set<Expr*> &src2, std::set<Expr*> &dst)
     { dst.insert(src1.begin(), src1.end()); dst.insert(src2.begin(), src2.end()); }
     const char* type_name();
 
     // fiesds
-    Expr_t type;
+    ExprType type;
     bool nullable;
     unsigned char literal;
     std::bitset<256> cc_table;
@@ -119,16 +120,20 @@ class Parser {
     std::set<Expr*> first;
     std::set<Expr*> last;
     void dump(std::size_t tab);
-    friend std::ostream& operator<<(std::ostream& stream, Expr& expr);
+    friend std::ostream& operator<<(std::ostream&, Expr&);
   };
+  
   Parser(const std::string &);
   Expr* expr_tree() { return _expr_root; }
   Expr* expr(std::size_t);
-  Expr* new_expr(Expr_t, Expr*, Expr*);
+  Expr* new_expr(ExprType, Expr*, Expr*);
   Expr* clone_expr(Expr*);
+  bool ok() const { return _ok; }
+  const std::string& error() const { return _error; }
  private:
-  Expr_t consume();
-  Expr_t lex();
+  ExprType consume();
+  ExprType lex();
+  std::size_t offset() const { return _regex_end - _regex_ptr; }
   unsigned char consume_char();
   int consume_int();
   bool lex_is_int() { return '0' <= lex_char() && lex_char() <= '9'; }
@@ -136,8 +141,8 @@ class Parser {
   bool regex_empty() { return _regex_ptr == _regex_end; }
   bool lex_is_atom();
   bool lex_is_quantifier();
-  Expr_t consume_repetition();
-  Expr_t consume_metachar();
+  ExprType consume_repetition();
+  ExprType consume_metachar();
 
   void parse();
   Expr* parse_union();
@@ -151,6 +156,8 @@ class Parser {
 
   // fields
   static const int repeat_infinitely = -1;
+  bool _ok;
+  std::string _error;
   std::string _regex;
   const unsigned char* _regex_begin;
   const unsigned char* _regex_end;
@@ -160,7 +167,7 @@ class Parser {
   std::bitset<256> _cc_table;
   unsigned char _literal;
   int _repeat_min, _repeat_max;
-  Expr_t _token;
+  ExprType _token;
 };
 
 Parser::Expr* Parser::expr(std::size_t index)
@@ -168,7 +175,7 @@ Parser::Expr* Parser::expr(std::size_t index)
   return index < _expr_tree.size() ? &_expr_tree[index] : NULL;
 }
 
-void Parser::Expr::init(Expr_t t, Expr* lhs_ = NULL, Expr* rhs_ = NULL)
+void Parser::Expr::init(ExprType t, Expr* lhs_ = NULL, Expr* rhs_ = NULL)
 {
   type = t;
   lhs = lhs_;
@@ -254,13 +261,14 @@ const char* Parser::Expr::type_name()
     "Literal", "Dot", "CharClass", 
     "Concat", "Union", 
     "kStar", "kPlus", "kRepetition", "kQmark",
-    "kEOP", "kLpar", "kRpar", "kByteRange", "kEpsilon"
+    "kEOP", "kLpar", "kRpar", "kByteRange", "kEpsilon",
+    "kBadExpr"
   };
 
   return type_name_[type];
 }
 
-Parser::Expr* Parser::new_expr(Expr_t t = kEpsilon, Expr* lhs = NULL, Expr* rhs = NULL)
+Parser::Expr* Parser::new_expr(ExprType t = kEpsilon, Expr* lhs = NULL, Expr* rhs = NULL)
 {
   _expr_tree.resize(_expr_tree.size() + 1);
   _expr_tree.back().init(t, lhs, rhs);
@@ -287,14 +295,20 @@ Parser::Expr* Parser::clone_expr(Expr* orig)
   return clone;
 }
 
-Parser::Parser(const std::string& regex): _regex(regex)
+Parser::Parser(const std::string& regex): _ok(true), _regex(regex)
 {
   _regex_begin = _regex_ptr = reinterpret_cast<const unsigned char*>(_regex.data());
   _regex_end = reinterpret_cast<const unsigned char*>(_regex.data()) + _regex.length();
-  parse();
+  try {
+    parse();
+  } catch (const char* error) {
+    _ok = false;
+    _error = "regular expression parse error: ";
+    _error += error;
+  }
 }
 
-Parser::Expr_t Parser::consume()
+Parser::ExprType Parser::consume()
 {
   if (regex_empty()) {
     _literal = '\0';
@@ -323,7 +337,7 @@ Parser::Expr_t Parser::consume()
   return _token;
 }
 
-Parser::Expr_t Parser::lex()
+Parser::ExprType Parser::lex()
 {
   return _token;
 }
@@ -373,25 +387,23 @@ int Parser::consume_int()
   return val;
 }
 
-Parser::Expr_t Parser::consume_repetition()
+Parser::ExprType Parser::consume_repetition()
 {
-  Expr_t token;
+  ExprType token;
 
-  if (lex_char() == '}') {
-    throw "bad repetition";
-  } else {
-    _repeat_min = _repeat_max = consume_int();
-    if (lex_char() == ',') {
-      if (consume_char() == '}') {
-        _repeat_max = repeat_infinitely;
-      } else {
-        _repeat_max = consume_int();
-      }
+  if (lex_char() == '}') throw "bad repetition";
+
+  _repeat_min = _repeat_max = consume_int();
+  if (lex_char() == ',') {
+    if (consume_char() == '}') {
+      _repeat_max = repeat_infinitely;
+    } else {
+      _repeat_max = consume_int();
     }
   }
 
-  if (_repeat_max != repeat_infinitely && (_repeat_min > _repeat_max)) throw "bad repetition";
-  if (lex_char() != '}') throw "bad repetition";
+  if (_repeat_max != repeat_infinitely && (_repeat_min > _repeat_max) ||
+      lex_char() != '}') throw "bad repetition";
 
   if (_repeat_min == 0 && _repeat_max == repeat_infinitely) token = kStar;
   else if (_repeat_min == 1 && _repeat_max == repeat_infinitely) token = kPlus;
@@ -401,9 +413,9 @@ Parser::Expr_t Parser::consume_repetition()
   return token;
 }
 
-Parser::Expr_t Parser::consume_metachar()
+Parser::ExprType Parser::consume_metachar()
 {
-  Expr_t token;
+  ExprType token;
 
   switch (lex_char()) {
     case '\0': throw "bad '\\'";
@@ -498,7 +510,7 @@ void Parser::parse()
     _expr_root = new_expr(kEOP);
   } else {
     Expr* expr = parse_union();
-    if (lex() != kEOP) throw "bad eop.";
+    if (lex() != kEOP) throw "bad EOP";
     Expr* eop = new_expr(kEOP);
     _expr_root = new_expr(kConcat, expr, eop);
   }
@@ -614,7 +626,7 @@ Parser::Expr* Parser::parse_atom()
       if (lex() != kRpar) throw "bad parentheses";
       break;
     }
-    default: throw "can't handle the type";
+    default: throw "can't handle the type ";
   }
 
   consume();
@@ -683,13 +695,15 @@ void Parser::fill_transition(Expr *expr)
     case kEOP: case kEpsilon:
       break;
     case kConcat:
-      connect(expr->lhs->last, expr->rhs->first); 
-    case kUnion: // ^^ fall through
+      connect(expr->lhs->last, expr->rhs->first);
+      // fall through
+    case kUnion:
       fill_transition(expr->lhs); fill_transition(expr->rhs);
       break;
     case kStar: case kPlus:
-      connect(expr->lhs->last, expr->lhs->first); 
-    case kQmark: // ^^ fall through
+      connect(expr->lhs->last, expr->lhs->first);
+      // fall through
+    case kQmark:
       fill_transition(expr->lhs);
       break;
     default: throw "can't handle the type";
@@ -715,6 +729,8 @@ class DFA {
     int& operator[](std::size_t i) { return t[i]; }
   };
   DFA(const std::string &, bool);
+  bool ok() const { return _ok; }
+  const std::string& error() const { return _error; }
   std::size_t size() const { return _states.size(); }
   const State& state(std::size_t i) const { return _states[i]; }
   State& state(std::size_t i) { return _states[i]; }
@@ -732,6 +748,8 @@ class DFA {
   static std::string& pretty(unsigned char, std::string &);
 
   //fields
+  bool _ok;
+  std::string _error;
   std::deque<State> _states;
 };
 
@@ -819,11 +837,31 @@ std::string& rans::DFA::pretty(unsigned char c, std::string &label)
   return label = label_.str();
 }
 
-DFA::DFA(const std::string &regex, bool do_minimize = false)
+DFA::DFA(const std::string &regex, bool do_minimize = true): _ok(true)
 {
   Parser p(regex);
-  construct(p.expr_tree());
-  if (do_minimize) minimize();
+  if (!p.ok()) {
+    _ok = false;
+    _error = p.error();
+    return;
+  }
+
+  try {
+    construct(p.expr_tree());
+  } catch (const char* error) {
+    _ok = false;
+    _error = "dfa construct error: ";
+    _error += error;
+    return;
+   }
+
+  try {
+    if (do_minimize) minimize();
+  } catch (const char* error) {
+    _ok = false;
+    _error = "dfa minimize error: ";
+    _error += error;
+  }
 }
 
 void DFA::construct(Parser::Expr* expr_tree)
@@ -1189,6 +1227,9 @@ class RANS {
  public:
   typedef rans::Value Value;
   RANS(const std::string &);
+  bool ok() const { return _ok; }
+  const std::string& error() const { return _error; }
+  bool is_acceptable(const std::string& text) const { return _dfa.is_acceptable(text); }
   Value& val(const std::string&, Value&) const;
   Value val(const std::string& text) const { Value value; return val(text, value); }
   std::string& rep(const Value&, std::string &) const;
@@ -1204,8 +1245,13 @@ class RANS {
   static void write(const std::string&, Value&);
   static void read(const std::string&, Value&);
  private:
+  //DISALLOW COPY AND ASSIGN
+  RANS(const RANS&);
+  void operator=(const RANS&);
   std::size_t floor(Value&) const;
   // fields
+  bool _ok;
+  std::string _error;
   DFA _dfa;
   MPMatrix _adjacency_matrix;
   MPMatrix _extended_adjacency_matrix;
@@ -1214,9 +1260,14 @@ class RANS {
   MPVector _accept_vector;
 };
 
-RANS::RANS(const std::string &regex): _dfa(regex, true), _extended_state(_dfa.size())
+RANS::RANS(const std::string &regex): _ok(true), _dfa(regex), _extended_state(_dfa.size())
 {
-  if (FLAGS_minimize) _dfa.minimize();
+  if (!_dfa.ok()) {
+    _ok = false;
+    _error = _dfa.error();
+    return;
+  }
+
   _adjacency_matrix.resize(size(), size());
   _extended_adjacency_matrix.resize(size()+1, size()+1);
   _start_vector.resize(size());
@@ -1242,6 +1293,17 @@ RANS::RANS(const std::string &regex): _dfa(regex, true), _extended_state(_dfa.si
   if (FLAGS_dump_matrix) std::cout << _adjacency_matrix << std::endl;
 }
 
+// val(), which caliculate value corresponds text, is fundamental function of ANS.
+// val() is bijection: L -> N where L is set of acceptable string defined by
+// regular expression (DFA), and N is natural number (include 0).
+// (inverse function of this is rep())
+//
+// This implementation runs in time O(n log |D|^2) such where n is the length of text
+// and |D| is the size of(number of states of) DFA.
+//
+// The return value is unspecified when text is not acceptable.
+// Therefore caller should assure that text is acceptable when calling this function.
+// caller could check like as: "if(is_accept(text)) val(text, value);".
 RANS::Value& RANS::val(const std::string& text, Value& value) const
 {
   int state = DFA::START;
@@ -1260,21 +1322,41 @@ RANS::Value& RANS::val(const std::string& text, Value& value) const
     }
   }
 
-  if (state == DFA::REJECT || !_dfa.is_acceptable(state)) throw "text is not acceptable";
+  if (state == DFA::REJECT || !_dfa.is_acceptable(state)) {
+    // UNSPECIFIED: currentaly returns -1;
+    return value = -1;
+  }
 
   inner_prod(paths, _accept_vector, value);
   
   return value;
 }
 
+// rep(), which caliculate text corresponds value, is fundamental function of ANS.
+// rep() is bijection: N -> L where and N is natural number (include 0) and L is
+// set of acceptable string defined by regular expression (DFA).
+// (inverse function of this is val())
+//
+// This implementation runs in time roughly O(n log |D|^3) where n is the length
+// of text and |D| is the size of(number of states of) DFA.
+//
+// The return text is unspecified when there is no text s.t. val(text) == value.
+// Therefore caller should assure that there exists a correspoding text when
+// calling this function. but don't worry, this condition is always true if caller
+// got value like as "value = val(text)"
 std::string& RANS::rep(const Value& value, std::string& text) const
 {
   MPMatrix tmpM(size(), size());
   MPVector V(size()), tmpV(size());
   int state = DFA::START;
   Value value_ = value, val, val_;
-  std::size_t len = floor(value_);
   text = "";
+  std::size_t len = floor(value_);
+
+  if (len < 0) {
+    // UNSPECIFIED: currentaly returns "";
+    return text;
+  }
 
   for (; len > 0; len--) {
     if (len == 1) {

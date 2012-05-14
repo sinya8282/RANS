@@ -17,7 +17,6 @@ TEST(ELEMENTAL_TEST, DFA_MINIMIZE) {
   for (std::map<std::string, std::size_t>::iterator iter = tests.begin();
        iter != tests.end(); ++iter) {
     rans::DFA d(iter->first);
-    d.minimize();
     ASSERT_EQ(iter->second, d.size())
         << "DFA(" << iter->first << ").size() != " << iter->second
         << "(" << d.size() << ")";
@@ -206,7 +205,7 @@ TEST(GOOGOL_BASE_TEST, RANS_REP) {
 const std::string http_url_regex = "http://((([a-zA-Z0-9]|[a-zA-Z0-9][-a-zA-Z0-9]*[a-zA-Z0-9])\\.)*([a-zA-Z]|[a-zA-Z][-a-zA-Z0-9]*[a-zA-Z0-9])\\.?|[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+)(:[0-9]*)?(/([-_.!~*'()a-zA-Z0-9:@&=+$,]|%[0-9A-Fa-f][0-9A-Fa-f])*(;([-_.!~*'()a-zA-Z0-9:@&=+$,]|%[0-9A-Fa-f][0-9A-Fa-f])*)*(/([-_.!~*'()a-zA-Z0-9:@&=+$,]|%[0-9A-Fa-f][0-9A-Fa-f])*(;([-_.!~*'()a-zA-Z0-9:@&=+$,]|%[0-9A-Fa-f][0-9A-Fa-f])*)*)*(\\?([-_.!~*'()a-zA-Z0-9;/?:@&=+$,]|%[0-9A-Fa-f][0-9A-Fa-f])*)?)?";
 
 TEST(HTTP_URL_TEST, DFA_MINIMIZE) {
-  rans::DFA orig(http_url_regex);
+  rans::DFA orig(http_url_regex, false); // do not minimization
   rans::DFA mini = orig;
   mini.minimize();
 

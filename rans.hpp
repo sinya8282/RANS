@@ -38,7 +38,7 @@
 //
 // To see more detail and usage, you could check RANS/test/rans.cc, which is
 // RANS simple program, and RANS/test/test.cc, which contains some theortical
-// notes. RANS github repository is http://github.com/sinya8282/RANS
+// notes. and project page of RANS - http://sinya8282.github.com/RANS
 //
 // Also, you can get more interesting, thoretical aspects by Berthé and Rigo's
 // great book - "Combinatorics, Automata and Number Theory".
@@ -58,18 +58,6 @@
 // External libraries: gmp(gmpxx), gflags, (Boost.uBLAS if you choose)
 #include <gmpxx.h>
 
-// You can choose uBLAS as Matrix/Vector classes, but
-// it seems slower (both compilation time and peformance) than
-// self-implementation. (I'm not sure how to use uBLAS effectively,,,)
-// Therefore RANS_USE_UBLAS macro is *UNDEFINED* as a default in Makefile.
-
-#ifdef RANS_USE_UBLAS
-#include <boost/numeric/ublas/vector.hpp>
-#include <boost/numeric/ublas/matrix.hpp>
-#include <boost/numeric/ublas/io.hpp>
-#include <boost/numeric/ublas/operation.hpp>
-#endif
-
 #include <gflags/gflags.h>
 DEFINE_bool(dump_expr, false, "dump Expr-tree.");
 DEFINE_bool(dump_dfa, false, "dump DFA as dot language.");
@@ -87,7 +75,7 @@ const std::string SYNTAX =
 "  atom       ::= literal | dot | charclass | '(' union ')'   \n"
 "                 utf8char # optional (--utf8)                \n"
 "  charclass  ::= '[' ']'? [^]]* ']'                          \n"
-"  literal    ::= [^*+?[\\]|] # not special synbols           \n"
+"  literal    ::= [^*+?[\\]|]                                 \n"
 "  dot        ::= '.' # NOTE: dot matchs also newline('\\n')  \n"
 "  utf8char   ::= [\\x00-\\x7f] | [\\xC0-\\xDF][\\x80-\\xBF]  \n"
 "               | [\\xE0-\\xEF][\\x80-\\xBF]{2}               \n"
@@ -1082,10 +1070,22 @@ bool DFA::is_acceptable(const std::string& text) const
   return is_acceptable(state);
 }
 
+// TODO: advanced optimization for Power of Matrix (Diagonalization!!)
+// Does anyone know good solution or (multi-precision) matrix library?
 
 typedef mpz_class Value;
 
 #ifdef RANS_USE_UBLAS
+// You can choose uBLAS as Matrix/Vector classes, but
+// it seems slower (both compilation time and peformance) than
+// self-implementation. (I'm not sure how to use uBLAS effectively,,,)
+// Therefore RANS_USE_UBLAS macro is *UNDEFINED* as a default in Makefile.
+} // escape namespace rans
+#include <boost/numeric/ublas/vector.hpp>
+#include <boost/numeric/ublas/matrix.hpp>
+#include <boost/numeric/ublas/io.hpp>
+#include <boost/numeric/ublas/operation.hpp>
+namespace rans { // re-enter namespace rans
 typedef boost::numeric::ublas::matrix<Value> MPMatrix;
 typedef boost::numeric::ublas::identity_matrix<Value> MPIdentityMatrix;
 typedef boost::numeric::ublas::vector<Value> MPVector;
@@ -1115,6 +1115,7 @@ Value& inner_prod(const MPVector& V, const MPVector& W, Value& v)
 {
   return v = boost::numeric::ublas::inner_prod(V, W);
 }
+
 #else
 class MPMatrix {
  public:

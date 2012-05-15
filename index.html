@@ -20,7 +20,7 @@
         <header class="inner">
           <a id="forkme_banner" href="https://github.com/sinya8282/RANS">View on GitHub</a>
 
-          <h1 id="project_title">RANS</h1>
+          <h1 id="project_title">RANS : More advanced usage of regular expression.</h1>
           <h2 id="project_tagline"></h2>
 
             <section id="downloads">
@@ -33,7 +33,7 @@
     <!-- MAIN CONTENT -->
     <div id="main_content_wrap" class="outer">
       <section id="main_content" class="inner">
-		<h3>1462290815058406142878645747899975197440717007135</h3>
+		<pre><code class="prettyprint lang-sh">1462290815058406142878645747899975197440717007135</code></pre>
 		<p>Can you guess what this number means? I assure you that it will be clear, if you read this page through!</p>
 
         <h3>Introduction</h3>
@@ -50,13 +50,16 @@ Example, let regular language L = { "", "a", "b", "c", "aa", "ab", "ac", "bb", "
 </p>
 <pre><code class="prettyprint lang-sh"> val("")==0, rep(2)=="b", val("c")==3, rep(5)=="ab", val("aaa")=9
 </code></pre>
-<p>moreover: </p>
-<pre><code class="prettyprint lang-sh"> val("a"^n) == n^2 </code></pre>
-<p>are hold. These definition and aspect as stated above is basic concept of Abstract Numeration System.
+<p>are hold. These definition and aspect as stated above is basic concept of ANS.
 </p>
 
 <h3>Install and Try RANS</h3>
 
+<p>RANS's main code is contained in actually one header file: <a href="http://github.com/sinya8282/RANS/blob/master/rans.hpp">rans.hpp</a></br>
+If you wants to see RANS's C++ API, <a href="api.html">check this page</a>. In this page, I just explain how to use RANS's command line tool 'rans'.</br>
+
+Firstly, you should checkout source code, and build it. (Depends on: gflags, gtest)
+</p>
 <pre><code class="prettyprint lang-sh">$ git clone "http://sinya8282@github.com/sinya8282/RANS.git"
 $ cd RANS
 $ make check        # can be skipped
@@ -65,15 +68,15 @@ $
 $ make install      # or install only header file
 </code></pre>
 
-<p>Now, you can try RANS cui program 'rans'.</p>
+<p>Now, you can try 'rans'.</p>
 <pre><code class="prettyprint lang-sh">#$ rehash 
 $ rans "a*(c*|b*)" --text aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 1936
-$ rans "a*(c*|b*)" 
-
+$ rans "a*(c*|b*)" --value 2382
+aaaaaaaaaccccccccccccccccccccccccccccccccccccccc
 </code></pre>
 
-<p>If you're using the GitHub for Mac, simply sync your repository and you'll see the new branch.</p>
+<p>You can see more usage via "rans --helpshort"</p>
 
 <h3>Regular Expression Syntax</h3>
 
@@ -145,14 +148,14 @@ http://sinya8282.github.com/RANS/
 
 <h4>Is RANS works well on Big Data?</h4>
 
-<p>No, I don't think so.</br>
+<p>No, I don't think so (at least for now).</br>
 because the larger the number becomes, the more operation and space will be needed in multiprecision integer multiplication (RANS uses GMP, internally).
 </p>
 
 <h3>Do you become interested in RANS?</br>and how it works internally?</h3>
 
 <p>You could check <a href="https://github.com/sinya8282/RANS">source code in repository</a>!</br>
-Also if you interested in Abstract Numeration System, more thoretical aspects, see Berthé and Rigo's great book <a href="http://www.cambridge.org/gb/knowledge/isbn/item2708037">"Combinatorics, Automata and Number Theory"</a> or their lecture notes.</p>
+Also if you interested in ANS, more mathematical aspects, see Berthé and Rigo's great book <a href="http://www.cambridge.org/gb/knowledge/isbn/item2708037">"Combinatorics, Automata and Number Theory"</a> or their lecture notes.</p>
 
 <h3>Author</h3>
 

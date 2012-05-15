@@ -6,3 +6,20 @@
 |____| |___||____| |____||_____|\____| \______.'
 
 Implimentation of Abstract Numeration System on a Regular Language.
+
+This is the source code repository for RANS, a regular expression library.
+
+For documentation about how to install and use RANS,
+visit http://sinya8282.github.com/RANS/
+
+The short version is:
+'''
+make check        # test, can be skipped
+make install      # install header only
+make install-all  # install both header and RANS cui (rans)
+'''
+
+Unless otherwise noted, the RANS source files are distributed
+under the BSD-style license found in the LICENSE file.
+
+RANS's native language is C++.

@@ -448,14 +448,14 @@ Parser::ExprType Parser::consume_repetition()
     }
   }
 
-  if (_repeat_max != repeat_infinitely && (_repeat_min > _repeat_max) ||
-      lex_char() != '}') throw "bad repetition";
+  if ((_repeat_max != repeat_infinitely && (_repeat_min > _repeat_max))
+      || lex_char() != '}') throw "bad repetition";
 
   if (_repeat_min == 0 && _repeat_max == repeat_infinitely) token = kStar;
   else if (_repeat_min == 1 && _repeat_max == repeat_infinitely) token = kPlus;
   else if (_repeat_min == 0 && _repeat_max == repeat_infinitely) token = kQmark;
   else token = kRepetition;
-    
+
   return token;
 }
 
@@ -1310,7 +1310,7 @@ class RANS {
   //DISALLOW COPY AND ASSIGN
   RANS(const RANS&);
   void operator=(const RANS&);
-  std::size_t floor(Value&) const;
+  int floor(Value&) const;
   // fields
   bool _ok;
   std::string _error;
@@ -1413,7 +1413,7 @@ std::string& RANS::rep(const Value& value, std::string& text) const
   int state = DFA::START;
   Value value_ = value, val, val_;
   text = "";
-  std::size_t len = floor(value_);
+  int len = floor(value_);
 
   if (len < 0) {
     // UNSPECIFIED: currentaly returns "";
@@ -1459,7 +1459,7 @@ std::string& RANS::rep(const Value& value, std::string& text) const
   return text;
 }
 
-std::size_t RANS::floor(Value& value) const
+int RANS::floor(Value& value) const
 {
   const int match_epsilon = _dfa.is_acceptable(DFA::START) ? 1 : 0;
   if (value < match_epsilon) return 0;

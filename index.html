@@ -38,8 +38,8 @@
 
         <h3>Introduction</h3>
 
-<p>RANS is library, implementation of Abstract Numeration System (ANS) on a regular language.</br>
-RANS's concept is very simple, just caliculate a number from given string on a regular language. In other words,
+<p>RANS is a library, implementation of Abstract Numeration System (ANS) on a regular language.</br>
+RANS's concept is very simple, just caliculates a number from given string on a regular language. In other words,
 <ul>
   <li>RANS provides a minimal perfect hash function that maps string to positive integer.</li>
   <li>RANS provides a 'val' that is bijection from N onto a language.</li>
@@ -56,32 +56,30 @@ Example, let regular language L = { "", "a", "b", "c", "aa", "ab", "ac", "bb", "
 <h3>Install and Try RANS</h3>
 
 <p>RANS's main code is contained in actually one header file: <a href="http://github.com/sinya8282/RANS/blob/master/rans.hpp">rans.hpp</a></br>
-If you wants to see RANS's C++ API, <a href="api.html">check this page</a>. In this page, I just explain how to use RANS's command line tool 'rans'.</br>
+If you wants to use RANS as a C++ library, check this page <a href="api.html">RANS C++ API Documentation</a>.</br></br>
 
-Firstly, you should checkout source code, and build it. (Depends on: gflags, gtest)
+In this page, I just explain how to use RANS's command line tool 'rans'.</br>
+Firstly, you should checkout source code, and build it. (Depends on: gflags, gtest, gmp)
 </p>
 <pre><code class="prettyprint lang-sh">$ git clone "http://sinya8282@github.com/sinya8282/RANS.git"
 $ cd RANS
 $ make check        # can be skipped
 $ make install-all  # install header & RANS cui (rans)
 $
-$ make install      # or install only header file
+$ # make install    # install only header file
 </code></pre>
 
 <p>Now, you can try 'rans'.</p>
-<pre><code class="prettyprint lang-sh">#$ rehash 
-$ rans "a*(c*|b*)" --text aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+<pre><code class="prettyprint lang-sh">$ rans "a*(c*|b*)" --text aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 1936
 $ rans "a*(c*|b*)" --value 2382
 aaaaaaaaaccccccccccccccccccccccccccccccccccccccc
 </code></pre>
 
-<p>You can see more usage via "rans --helpshort"</p>
-
 <h3>Regular Expression Syntax</h3>
 
 <p>You could check syntax via --syntax option</p>
-<pre><code class="prettyprint lang-sh">% rans 
+<pre><code class="prettyprint lang-sh">% rans --syntax
 RANS "simplified" extended regular expression syntax:
   regex      ::= union* EOP
   union      ::= concat ('|' concat)*
@@ -100,36 +98,53 @@ RANS "simplified" extended regular expression syntax:
 
 <p>NOTE: dot '.' matchs any 1byte character, including <b>newline '\n'.</p>
 
-<h3>use RANS as Text Converter</h3>
+<h3>Use RANS as a Text Converter</h3>
 
-<h3>use RANS as Data Compressor</h3>
+I often see this question in web, 「How to convert Hexadecimal and Octal to Binary?」. RANS provides general solution of this problem(Base-conversion, moregeneraly). It's simple, caliculates the val() of given text on base-k language, and then caliculates the rep() of before val() on base-l languge.</br></br>
 
-<p>RANS's concept is very simple, but more flexible than that. You might think 「So what? Is there any practical usage?」</br>
-<font color="white">(｀・ω・´) イイぜっ!! 見せてやるっ！正規表現の無限の可能性をよっ！</font>
+Example:
+<pre><code class="prettyprint lang-sh">$ # first, convert decimal representation to octal representation
+$ rans '0|[1-7][0-7]*' --text 31723501261722172350012617220172317235012617221501261722172350126172217235012617221
+366279202153417409243738390844334144022596873428737191758601997964469280401
+$ # ok. next, convert this value to hexadecimal representation
+$ rans '0|[1-9A-F][0-9A-F]*' --value 366279202153417409243738390844334144022596873428737191758601997964469280401
+CF4E82B1E91E9D00AC7A40F4CF4E82B1E91A0AC7A47A74158F48F4E82B1E91
+$ # You can do that more directly using --convert_to(--convert_from) option.
+$ rans '0|[1-7][0-7]*' --convert_to '0|[1-9A-F][0-9A-F]' --text 31723501261722172350012617220172317235012617221501261722172350126172217235012617221
+CF4E82B1E91E9D00AC7A40F4CF4E82B1E91A0AC7A47A74158F48F4E82B1E91
+</code></pre>
 </br>
-OK, here I give a more practical example of engineering application about "compression".</br>
+
+<h3>Use RANS as a Data Compressor</h3>
+
+<p>RANS's concept is very simple, but more flexible than that. <br>
+You might think 「So what? Is there any practical usage?」</br>
+<font color="#F2F2F2">(｀・ω・´) イイぜっ!! 見せてやるっ！正規表現の無限の可能性をよっ！</font>
+</br>
+Okay, here I give a more practical example of engineering application about "compression".</br>
 that is, http-url.</p>
 
 <p><a href="http://www.ietf.org/rfc/rfc2396.txt">formal http-url syntax</a> can be defined by the (POSIX extended) regular expression.
-
-such that:
+such as:
 </p>
 
 <pre><code>http://((([a-zA-Z0-9]|[a-zA-Z0-9][-a-zA-Z0-9]*[a-zA-Z0-9])\\.)*([a-zA-Z]|[a-zA-Z][-a-zA-Z0-9]*[a-zA-Z0-9])\\.?|[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+)(:[0-9]*)?(/([-_.!~*'()a-zA-Z0-9:@&=+$,]|%[0-9A-Fa-f][0-9A-Fa-f])*(;([-_.!~*'()a-zA-Z0-9:@&=+$,]|%[0-9A-Fa-f][0-9A-Fa-f])*)*(/([-_.!~*'()a-zA-Z0-9:@&=+$,]|%[0-9A-Fa-f][0-9A-Fa-f])*(;([-_.!~*'()a-zA-Z0-9:@&=+$,]|%[0-9A-Fa-f][0-9A-Fa-f])*)*)*(\\?([-_.!~*'()a-zA-Z0-9;/?:@&=+$,]|%[0-9A-Fa-f][0-9A-Fa-f])*)?)?
 </code></pre>
 (my handwritten, might be wrong :-p)
 
-<p>This is hairy, pathological expression. However, the minimal DFA that corresponds this has only 26 states. I generated one graph of this DFA as shown below.
-</p>
-
-<img src="images/http-url.png">
-
+<p>This is hairy, pathological expression. However, the minimal DFA that corresponds this has only 26 states. I generated one graph of this DFA via --dump_dfa option (also this expression is contained in a repository: test/<a href="http://github.com/sinya8282/RANS/blob/master/test/http-url.regex">http-url.regex</a>).</p>
+<pre><code class="prettyprint lang-sh"> $ rans -f test/http-url.regex --dump_dfa | dot -Tpng -o http-url.png </code></pre>
+<p>as shown below. <img src="images/http-url.png"></p>
 <p>
 
+<p>Good. http-url is definable by a regular expression, recognizable by a DFA, and moreover - numberble by RANS.</br>
+Let's try to get the number of this page's http-url: <a href="http://sinya8282.github.com/RANS/">http://sinya8282.github.com/RANS/</a>
+</p>
 <pre><code class="prettyprint lang-sh">$ rans -f test/http-url.regex --text "http://sinya8282.github.com/RANS/"
 1462290815058406142878645747899975197440717007135
 $ rans -f test/http-url.regex --value 1462290815058406142878645747899975197440717007135
 http://sinya8282.github.com/RANS/
+$ # Do you remember seeing that number somewhere before ? ;-)
 </code></pre>
 
 <p>and data size of this url and number is 33 and 20 (Bytes). You can make sure it by --compress/--decompress option.</p>
@@ -144,12 +159,17 @@ $ cat url
 http://sinya8282.github.com/RANS/
 </code></pre>
 
-<p>that is, I think RANS can gives us "compact" representation of source text on the assumption that we know well-defined language (or scheme, regular expression). like a http-url, there are many scheme based languages in real-world.</p>
+<p>that is, I think RANS can gives us "compact" representation of source text on the assumption that we know well-defined language (or scheme, regular expression). like a http-url, there are many scheme based languages in real-world.</br></br>
+So what do you use it for? dispose of the matter at YOUR discretion ;-)</p>
 
-<h4>Is RANS works well on Big Data?</h4>
+<p>You can see more usage via --helpshort option</p>
+
+<h4>Performance: Does RANS work well on Big Data?</h4>
 
 <p>No, I don't think so (at least for now).</br>
-because the larger the number becomes, the more operation and space will be needed in multiprecision integer multiplication (RANS uses GMP, internally).
+Because the larger the number becomes, the more operation and space will be needed in multiprecision integer multiplication (RANS uses GMP C++ class interface).</br></br>
+
+Suppose a each multiplication performes in constant time, val() runs in time O(n*|D|^2) and rep() runs in time O(n log n * |D|^3) where n is a length of a source text and |D| denotes a size of a DFA.
 </p>
 
 <h3>Do you become interested in RANS?</br>and how it works internally?</h3>
@@ -158,8 +178,12 @@ because the larger the number becomes, the more operation and space will be need
 Also if you interested in ANS, more mathematical aspects, see Berthé and Rigo's great book <a href="http://www.cambridge.org/gb/knowledge/isbn/item2708037">"Combinatorics, Automata and Number Theory"</a> or their lecture notes.</p>
 
 <h3>Author</h3>
-
-<p>Ryoma Sin'ya (<a href="http://twitter.com/sinya8282">@sinya8282</a>). and thanks to Michel Rigo, who is member of ANS originator<p>
+<p>Ryoma Sin'ya (<a href="http://twitter.com/sinya8282">@sinya8282</a>)</p>
+<p>Feature suggestions and bug reports are always welcome!! <a href="http://github.com/sinya8282/RANS/issues">GitHub issues</a></p>
+<h3>Acknowledgement</h3>
+<ul>
+  <li>Special thanks to Michel Rigo who is one of the originators of ANS, and gave me helpful comments.</li>
+</ul>
       </section>
     </div>
 

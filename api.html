@@ -10,7 +10,7 @@
 	<link rel="stylesheet" type="text/css" media="screen" href="javascripts/prettify/prettify.css"/>
 	<script type="text/javascript" src="javascripts/prettify/prettify.js"></script>
 
-    <title>RANS C++ API Documentation</title>
+    <title>RANS : C++ API Documentation</title>
   </head>
 
   <body onload="prettyPrint()">
@@ -35,31 +35,33 @@
       <section id="main_content" class="inner">
 
 <h3>Encoding Interface</h3>
-
-<h3>Quick Start</h3>
-
-<p>and here is simple, but complete encode & decode REPL code.</p>
+<h3>Sample Code</h3>
+<p>Here is the code of the simple but complete encode & decode REPL program.</p>
 <pre><code class="prettyprint lang-cpp">#include &lt;rans.hpp&gt;
-#include &lt;aslkdjfas&gt;
-#include &lt;cassert&gt;
+#include &lt;iostream&gt;
+
 int main() {
   std::string regex;
+  std::cout << "regex: ";
   std::cin >> regex;
+
   RANS rans(regex);
   if(!rans.ok()) {
     std::cout << rans.error() << std::endl;
     exit(0);
   }
-  RANS::Value value; // avoid copy 
-  std::text;
-  while (std::cin >> text) {
-    if (r.is_acceptable(text)) {
-      std::cout << "val: " << r(text, value) << std::endl;
-      std::cout << "rep: " << r(value, text) << std::endl;
+
+  RANS::Value value;
+  std::string text;
+  while (std::cout << "text: " && std::cin >> text) {
+    if (rans.is_acceptable(text)) {
+      std::cout << "val(text):  " << rans(text, value) << std::endl;
+      std::cout << "rep(value): " << rans(value, text) << std::endl;
     } else {
       std::cout << "text is not acceptable." << std::endl;
     }
   }
+
   return 0;
 }
 </code></pre>

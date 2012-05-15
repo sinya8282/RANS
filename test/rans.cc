@@ -69,8 +69,11 @@ int main(int argc, char* argv[])
     }
     ifs >> text;
 
-    if (FLAGS_out == "") FLAGS_out = FLAGS_compress;
-    FLAGS_out += ".rans";
+    if (FLAGS_out == "") {
+      FLAGS_out = FLAGS_compress;
+      FLAGS_out += ".rans";
+    }
+
     std::ofstream ofs(FLAGS_out.data(), std::ios::out | std::ios::binary);
 
     ofs << r.compress(text);
@@ -117,11 +120,11 @@ void set_filename(const std::string& src, std::string& dst)
 {
   if (dst != "") return;
 
-  const std::size_t suffix_len = 5; // suffix = ".rans"
+  static const std::string suffix = ".rans";
 
-  if (src.length() > suffix_len &&
-      src.substr(src.length() - suffix_len, std::string::npos) == ".rans") {
-    dst = src.substr(0, src.length() - suffix_len);
+  if (src.length() > suffix.length() &&
+      src.substr(src.length() - suffix.length(), std::string::npos) == suffix) {
+    dst = src.substr(0, src.length() - suffix.length() - 1);
   } else {
     std::string input = "dummy";
     do {
@@ -133,7 +136,7 @@ void set_filename(const std::string& src, std::string& dst)
           std::cin >> dst;
           return;
         default:
-          std::cout << "replace hoge? [y]es, [n]o, [A]ll, [N]one, [r]ename: ";
+          std::cout << "replace " << src << "? [y]es, [n]o, [A]ll, [N]one, [r]ename: ";
       }
     } while (std::cin >> input);
   }

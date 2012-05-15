@@ -4,10 +4,10 @@
   |  __ /      / ___ \     | |\ \| |   \_____`.
  _| |  \ \_  _/ /   \ \_  _| |_\   |_ | \____) |
 |____| |___||____| |____||_____|\____| \______.'
-
 Implimentation of Abstract Numeration System on a Regular Language.
 
-This is the source code repository for RANS, a regular expression library.
+This is the source code repository for RANS, a data conversion library
+using regular expression.
 
 For documentation about how to install and use RANS,
 visit http://sinya8282.github.com/RANS/

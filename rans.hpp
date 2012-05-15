@@ -34,7 +34,7 @@
 //           r2.rep(1)=="a"; r2.rep(4)=="aa"; r2.val("aaa")==9;
 //
 // This class would be exported (using rans::RANS), so users can use simply
-// just like 'RANS r(regex); RANS::Value value = r(text);'.
+// just like: 'RANS r(regex); RANS::Value value = r(text);'.
 //
 // To see more detail and usage, you could check RANS/test/rans.cc, which is
 // RANS simple program, and RANS/test/test.cc, which contains some theortical
@@ -42,7 +42,6 @@
 //
 // Also, you can get more interesting, thoretical aspects by Berthé and Rigo's
 // great book - "Combinatorics, Automata and Number Theory".
-
 
 #include <iostream>
 #include <sstream>
@@ -62,7 +61,7 @@
 // You can choose uBLAS as Matrix/Vector classes, but
 // it seems slower (both compilation time and peformance) than
 // self-implementation. (I'm not sure how to use uBLAS effectively,,,)
-// Therefore RANS_USE_UBLAS macro is *Undefined* as a default in Makefile.
+// Therefore RANS_USE_UBLAS macro is *UNDEFINED* as a default in Makefile.
 
 #ifdef RANS_USE_UBLAS
 #include <boost/numeric/ublas/vector.hpp>
@@ -139,7 +138,7 @@ class Parser {
     kBadExpr
   };
   struct Expr {
-    Expr() { type = kEpsilon; lhs = rhs = NULL; }
+    Expr() { type = kEpsilon; lhs = rhs = 0; }
     Expr(ExprType t, Expr* lhs = NULL, Expr* rhs = NULL) { init(t, lhs, rhs); }
     void init(ExprType, Expr*, Expr*);
     void set_union(std::set<Expr*> &src1, std::set<Expr*> &src2, std::set<Expr*> &dst)
@@ -1405,7 +1404,7 @@ RANS::Value& RANS::val(const std::string& text, Value& value) const
 // The return text is unspecified when there is no text s.t. val(text) == value.
 // Therefore caller should assure that there exists a correspoding text when
 // calling this function. but don't worry, this condition is always true if caller
-// got value like as "value = val(text)"
+// got the value via val() just like: "value = val(text)"
 std::string& RANS::rep(const Value& value, std::string& text) const
 {
   MPMatrix tmpM(size(), size());

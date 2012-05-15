@@ -14,7 +14,7 @@
    |____| |___||____| |____||_____|\____| \______.'
 
 */
-// RANS - Implementation of Abstract-Numeration-System(ANS) on regular language.
+// RANS - Implementation of Abstract-Numeration-System(ANS) on a regular language.
 // This header file consists of mainly three parts described below.
 //
 // rans::DFA (and Parse) is simple DFA implementation.
@@ -78,22 +78,21 @@ DEFINE_bool(dump_matrix, false, "dump Matrix.");
 
 namespace rans {
 
-const std::string SYNTAX = "\
-RANS \"simplified\" extended regular expression syntax:    \n\
-  regex      ::= union* EOP                                \n\
-  union      ::= concat ('|' concat)*                      \n\
-  concat     ::= repetition+                               \n\
-  repetition ::= atom quantifier*                          \n\
-  quantifier ::= [*+?] | '{' (\\d+ | \\d* ',' \\d* ) '}'   \n\
-  atom       ::= literal | dot | charclass | '(' union ')' \n\
-                 utf8char # optional (--utf8)              \n\
-  charclass  ::= '[' ']'? [^]]* ']'                        \n\
-  literal    ::= [^*+?[\\]|] # not special synbols         \n\
-  dot        ::= '.' # NOTE: dot matchs also newline('\\n')\n\
-  utf8char   ::= [\\x00-\\x7f] | [\\xC0-\\xDF][\\x80-\\xBF]\n\
-               | [\\xE0-\\xEF][\\x80-\\xBF]{2}             \n\
-               | [\\xF0-\\xF7][\\x80-\\xBF]{3}             \n\
-";
+const std::string SYNTAX = 
+"RANS \"simplified\" extended regular expression syntax:      \n"
+"  regex      ::= union* EOP                                  \n"
+"  union      ::= concat ('|' concat)*                        \n"
+"  concat     ::= repetition+                                 \n"
+"  repetition ::= atom quantifier*                            \n"
+"  quantifier ::= [*+?] | '{' (\\d+ | \\d* ',' \\d* ) '}'     \n"
+"  atom       ::= literal | dot | charclass | '(' union ')'   \n"
+"                 utf8char # optional (--utf8)                \n"
+"  charclass  ::= '[' ']'? [^]]* ']'                          \n"
+"  literal    ::= [^*+?[\\]|] # not special synbols           \n"
+"  dot        ::= '.' # NOTE: dot matchs also newline('\\n')  \n"
+"  utf8char   ::= [\\x00-\\x7f] | [\\xC0-\\xDF][\\x80-\\xBF]  \n"
+"               | [\\xE0-\\xEF][\\x80-\\xBF]{2}               \n"
+"               | [\\xF0-\\xF7][\\x80-\\xBF]{3}               \n";
 
 enum Encoding {
   ASCII = 0, // default
@@ -892,9 +891,11 @@ std::string& rans::DFA::pretty(unsigned char c, std::string &label)
     if (c == '"' || c == '\\') label_ << '\\';
     label_ << c;
   } else {
-    label_ << std::showbase << std::hex << c;
+    label_ << std::showbase << std::hex << static_cast<unsigned int>(c);
   }
-  return label = label_.str();
+
+  label_ >> label;
+  return label;
 }
 
 DFA::DFA(const std::string &regex, Encoding enc = ASCII, bool do_minimize = true): _ok(true)
@@ -1075,7 +1076,7 @@ bool DFA::is_acceptable(const std::string& text) const
 {
   int state = START;
   for (std::size_t i = 0; i < text.length(); i++) {
-    state = _states[state][text[i]];
+    state = _states[state][static_cast<unsigned char>(text[i])];
     if (state == REJECT) return false;
   }
 
@@ -1302,9 +1303,9 @@ class RANS {
   Value operator()(const std::string& text) const { return val(text); }
   std::string& operator()(const Value& value, std::string& text) const { return rep(value, text); }
   std::string operator()(const Value& value) const { return rep(value); }
-  // write and read value function
-  static void write(const std::string&, Value&);
-  static void read(const std::string&, Value&);
+  std::string& compress(std::string&);
+  std::string& decompress(std::string&);
+  static const RANS baseBYTE;
  private:
   //DISALLOW COPY AND ASSIGN
   RANS(const RANS&);
@@ -1373,11 +1374,11 @@ RANS::Value& RANS::val(const std::string& text, Value& value) const
 
   for (std::size_t i = 0; state != DFA::REJECT && i < text.length(); i++) {
     paths[DFA::START]++;
-    for (std::size_t c = 0; static_cast<unsigned char>(c) < text[i]; c++) {
+    for (std::size_t c = 0; c < static_cast<unsigned char>(text[i]); c++) {
       int next = _dfa[state][c];
       if (next != DFA::REJECT) paths[next]++;
     }
-    state = _dfa[state][text[i]];
+    state = _dfa[state][static_cast<unsigned char>(text[i])];
     if (i < text.length() - 1) {
       prod(paths, _adjacency_matrix);
     }
@@ -1467,7 +1468,7 @@ std::size_t RANS::floor(Value& value) const
   tmpM = _extended_adjacency_matrix;
 
   if (tmpM(DFA::START, _extended_state) + match_epsilon > value) {
-    value -= tmpM(DFA::START, _extended_state) + match_epsilon;
+    value -= match_epsilon;
     return 1;
   }
   
@@ -1491,18 +1492,18 @@ std::size_t RANS::floor(Value& value) const
   return length;
 }
 
-void RANS::write(const std::string& filename, Value& value)
+const RANS RANS::baseBYTE(".*");
+
+std::string& RANS::compress(std::string& text)
 {
-  FILE* file = fopen(filename.data(), "w");
-  mpz_out_raw(file, value.get_mpz_t());
-  fclose(file);
+  Value value;
+  return baseBYTE(val(text, value), text);
 }
 
-void RANS::read(const std::string& filename, Value& value)
+std::string& RANS::decompress(std::string& text)
 {
-  FILE* file = fopen(filename.data(), "r");
-  mpz_inp_raw(value.get_mpz_t(), file);
-  fclose(file);
+  Value value;
+  return rep(baseBYTE(text, value), text);
 }
 
 } // namespace rans

@@ -7,13 +7,15 @@
 
 DEFINE_string(f, "", "obtain patterns from FILE.");
 DEFINE_string(text, "", "print value of given text on ANS.");
+DEFINE_string(quick_check, "", "check wheter given text is acceptable or not.");
 DEFINE_string(value, "", "print text of given value on ANS.");
 DEFINE_bool(verbose, false, "report additional informations.");
 DEFINE_bool(syntax, false, "print RANS regular expression syntax.");
 DEFINE_bool(utf8, false, "use utf8 as internal encoding.");
-DEFINE_string(encode, "", "encode given file.");
-DEFINE_string(quick_check, "", "check wheter given text is acceptable.");
-DEFINE_string(decode, "", "decode given file");
+DEFINE_string(convert_from, "", "convert given value base from given expression.");
+DEFINE_string(convert_to, "", "convert given value base to given expression.");
+DEFINE_string(compress, "", "compress given file (create '.rans' file, by default).");
+DEFINE_string(decompress, "", "decompress given file");
 DEFINE_string(out, "", "output file name.");
 DEFINE_bool(size, false, "print DFA's size.");
 DEFINE_bool(repl, false, "start REPL.");
@@ -58,20 +60,36 @@ int main(int argc, char* argv[])
     } else {
       std::cout << "text is not acceptable." << std::endl;
     }
-  } else if (FLAGS_encode != "") {
-    std::string text; RANS::Value value;
-    std::ifstream ifs(FLAGS_encode.data());
+  } else if (FLAGS_compress != "") {
+    std::string text;
+    std::ifstream ifs(FLAGS_compress.data(), std::ios::in | std::ios::binary);
+    if (ifs.fail()) {
+      std::cout << FLAGS_decompress + " does not exists." << std::endl;
+      exit(0);
+    }
     ifs >> text;
-    if (FLAGS_out == "") FLAGS_out = FLAGS_encode;
+
+    if (FLAGS_out == "") FLAGS_out = FLAGS_compress;
     FLAGS_out += ".rans";
-    RANS::write(FLAGS_out, r(text, value));
-  } else if (FLAGS_decode != "") {
-    std::string text; RANS::Value value;
-    RANS::read(FLAGS_decode, value);
-    set_filename(FLAGS_decode, FLAGS_out);
+    std::ofstream ofs(FLAGS_out.data(), std::ios::out | std::ios::binary);
+
+    ofs << r.compress(text);
+  } else if (FLAGS_decompress != "") {
+    std::ifstream ifs(FLAGS_decompress.data(), std::ios::in | std::ios::binary);
+    if (ifs.fail()) {
+      std::cout << FLAGS_decompress + " does not exists." << std::endl;
+      exit(0);
+    }
+
+    std::istreambuf_iterator<char> first(ifs);
+    std::istreambuf_iterator<char> last;
+    std::string text(first, last);
+
+    set_filename(FLAGS_decompress, FLAGS_out);
     if (FLAGS_out == "") exit(0);
-    std::ofstream ofs(FLAGS_out.data());
-    ofs << r(value, text);
+    std::ofstream ofs(FLAGS_out.data(), std::ios::out | std::ios::binary);
+
+    ofs << r.decompress(text);
   } else if (FLAGS_size) {
     std::cout << "size of DFA: " << r.dfa().size() << std::endl;
   } else if (FLAGS_value != "") {

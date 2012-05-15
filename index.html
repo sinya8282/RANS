@@ -34,20 +34,43 @@
     <div id="main_content_wrap" class="outer">
       <section id="main_content" class="inner">
 		<h3>1462290815058406142878645747899975197440717007135</h3>
-		<p>Can you guess what this number means? I assure you that it will be clear, if you read this page through :-)</p>
+		<p>Can you guess what this number means? I assure you that it will be clear, if you read this page through!</p>
 
         <h3>Introduction</h3>
 
-<p>RANS is library, implementation of Abstract Numeration System (ANS) on a regular language.
+<p>RANS is library, implementation of Abstract Numeration System (ANS) on a regular language.</br>
+RANS's concept is very simple, just caliculate a number from given string on a regular language. In other words,
+<ul>
+  <li>RANS provides a minimal perfect hash function that maps string to positive integer.</li>
+  <li>RANS provides a 'val' that is bijection from N onto a language.</li>
+  <li>　　 and 'rep' is inverse function of 'val'.</li>
+  <li>RANS makes set of acceptable string totally ordered by <a href="http://en.wikipedia.org/wiki/Lexicographical_order#Ordering_of_sequences_of_various_lengths">Lexicographic order</a>.</li>
+</ul>
+Example, let regular language L = { "", "a", "b", "c", "aa", "ab", "ac", "bb", "cc", "aaa", ... }, map val: L -> N, and inverse function rep: N -> L. then:
+</p>
+<pre><code class="prettyprint lang-sh"> val("")==0, rep(2)=="b", val("c")==3, rep(5)=="ab", val("aaa")=9
+</code></pre>
+<p>moreover: </p>
+<pre><code class="prettyprint lang-sh"> val("a"^n) == n^2 </code></pre>
+<p>are hold. These definition and aspect as stated above is basic concept of Abstract Numeration System.
 </p>
 
-<h3>Quick Start</h3>
+<h3>Install and Try RANS</h3>
 
-<pre><code>$ git clone "http://sinya8282@github.com/sinya8282/RANS.git"
+<pre><code class="prettyprint lang-sh">$ git clone "http://sinya8282@github.com/sinya8282/RANS.git"
 $ cd RANS
 $ make check        # can be skipped
-$ make install      # install only header
-$ make install-all  # or install both header & RANS cui (rans)
+$ make install-all  # install header & RANS cui (rans)
+$
+$ make install      # or install only header file
+</code></pre>
+
+<p>Now, you can try RANS cui program 'rans'.</p>
+<pre><code class="prettyprint lang-sh">#$ rehash 
+$ rans "a*(c*|b*)" --text aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+1936
+$ rans "a*(c*|b*)" 
+
 </code></pre>
 
 <p>If you're using the GitHub for Mac, simply sync your repository and you'll see the new branch.</p>
@@ -55,13 +78,34 @@ $ make install-all  # or install both header & RANS cui (rans)
 <h3>Regular Expression Syntax</h3>
 
 <p>You could check syntax via --syntax option</p>
-<pre><code>
+<pre><code class="prettyprint lang-sh">% rans 
+RANS "simplified" extended regular expression syntax:
+  regex      ::= union* EOP
+  union      ::= concat ('|' concat)*
+  concat     ::= repetition+
+  repetition ::= atom quantifier*
+  quantifier ::= [*+?] | '{' (\d+ | \d* ',' \d* ) '}'
+  atom       ::= literal | dot | charclass | '(' union ')'
+                 utf8char # optional (--utf8)
+  charclass  ::= '[' ']'? [^]]* ']'
+  literal    ::= [^*+?[\]|]
+  dot        ::= '.'
+  utf8char   ::= [\x00-\x7f] | [\xC0-\xDF][\x80-\xBF]
+               | [\xE0-\xEF][\x80-\xBF]{2}
+               | [\xF0-\xF7][\x80-\xBF]{3}
 </code></pre>
 
-<h3>Data Compression</h3>
+<p>NOTE: dot '.' matchs any 1byte character, including <b>newline '\n'.</p>
 
-<p>
-Here I give a concrete example of engineering application about data compression using RANS. that is, http-url.</p>
+<h3>use RANS as Text Converter</h3>
+
+<h3>use RANS as Data Compressor</h3>
+
+<p>RANS's concept is very simple, but more flexible than that. You might think 「So what? Is there any practical usage?」</br>
+<font color="white">(｀・ω・´) イイぜっ!! 見せてやるっ！正規表現の無限の可能性をよっ！</font>
+</br>
+OK, here I give a more practical example of engineering application about "compression".</br>
+that is, http-url.</p>
 
 <p><a href="http://www.ietf.org/rfc/rfc2396.txt">formal http-url syntax</a> can be defined by the (POSIX extended) regular expression.
 
@@ -78,18 +122,31 @@ such that:
 <img src="images/http-url.png">
 
 <p>
-val("") on S equals to 872522588361473837 (base 10)
-, and data size of this http-url and number is 17 and 8 (bytes). 
 
-that is, I think ANS can give us "compact" representation of strings on the assumption that we know
-well-defined language (or scheme). like a http-url, there are many scheme based languages in real-world.
+<pre><code class="prettyprint lang-sh">$ rans -f test/http-url.regex --text "http://sinya8282.github.com/RANS/"
+1462290815058406142878645747899975197440717007135
+$ rans -f test/http-url.regex --value 1462290815058406142878645747899975197440717007135
+http://sinya8282.github.com/RANS/
+</code></pre>
 
-</p>
+<p>and data size of this url and number is 33 and 20 (Bytes). You can make sure it by --compress/--decompress option.</p>
+<pre><code class="prettyprint lang-sh">$ echo -n "http://sinya8282.github.com/RANS/" > url
+$ rans -f test/http-url.regex --compress url 
+$ ls -lh url url.rans   # compressed file is created with '.rans' extension
+-rw-r--r--  1 sinya  staff  33 May 15 21:34 url
+-rw-r--r--  1 sinya  staff  20 May 15 21:34 url.rans
+$ rm url
+$ rans -f test/http-url.regex --decompress url.rans
+$ cat url
+http://sinya8282.github.com/RANS/
+</code></pre>
+
+<p>that is, I think RANS can gives us "compact" representation of source text on the assumption that we know well-defined language (or scheme, regular expression). like a http-url, there are many scheme based languages in real-world.</p>
 
 <h4>Is RANS works well on Big Data?</h4>
 
 <p>No, I don't think so.</br>
-because the larger the number (which is calculated in val()) becomes, the more operation and space will be needed in multiprecision integer multiplication.
+because the larger the number becomes, the more operation and space will be needed in multiprecision integer multiplication (RANS uses GMP, internally).
 </p>
 
 <h3>Do you become interested in RANS?</br>and how it works internally?</h3>
@@ -99,7 +156,7 @@ Also if you interested in Abstract Numeration System, more thoretical aspects, s
 
 <h3>Author</h3>
 
-<p>Ryoma Sin'ya (<a href="http://twitter.com/sinya8282">@sinya8282</a>)<p>
+<p>Ryoma Sin'ya (<a href="http://twitter.com/sinya8282">@sinya8282</a>). and thanks to Michel Rigo, who is member of ANS originator<p>
       </section>
     </div>
 
@@ -110,8 +167,5 @@ Also if you interested in Abstract Numeration System, more thoretical aspects, s
         <p>Published with <a href="http://pages.github.com">GitHub Pages</a></p>
       </footer>
     </div>
-
-    
-
   </body>
 </html>

@@ -2,13 +2,18 @@
 
 MODE=RELEASE #or DEBUG
 MATRIX_LIB=SELF #or UBLAS
+RANS_USE_GFLAGS=yes
 
 CC=g++
 
 ifeq ($(MODE),DEBUG)
-CFLAGS=-O0 -g3 -Wall -I$(PWD) -DRANS_USE_$(MATRIX_LIB) -DRANS_DEBUG
+CFLAGS= -O0 -g3 -Wall -I$(PWD) -DRANS_USE_$(MATRIX_LIB) -DRANS_DEBUG
 else
-CFLAGS=-O3 -Wall -I$(PWD) -DRANS_USE_$(MATRIX_LIB)
+CFLAGS= -O3 -Wall -I$(PWD) -DRANS_USE_$(MATRIX_LIB)
+endif
+
+ifeq ($(RANS_USE_GFLAGS),yes)
+CFLAGS += -DRANS_USE_GFLAGS
 endif
 
 LFLAGS=-lgmp -lgmpxx -lgflags -lgtest -lgtest_main

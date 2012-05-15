@@ -58,10 +58,16 @@
 // External libraries: gmp(gmpxx), gflags, (Boost.uBLAS if you choose)
 #include <gmpxx.h>
 
+#ifdef RANS_USE_GFLAGS
 #include <gflags/gflags.h>
 DEFINE_bool(dump_expr, false, "dump Expr-tree.");
 DEFINE_bool(dump_dfa, false, "dump DFA as dot language.");
 DEFINE_bool(dump_matrix, false, "dump Matrix.");
+#else
+#define FLAGS_dump_expr   false
+#define FLAGS_dump_dfa    false
+#define FLAGS_dump_matrix false
+#endif // RANS_USE_GFLAGS
 
 namespace rans {
 

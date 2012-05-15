@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset='utf-8' />
+    <meta http-equiv="X-UA-Compatible" content="chrome=1" />
+    <meta name="description" content="RANS : C++ API Documentation" />
+
+    <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css" />
+	<link rel="stylesheet" type="text/css" media="screen" href="javascripts/prettify/prettify.css"/>
+	<script type="text/javascript" src="javascripts/prettify/prettify.js"></script>
+
+    <title>RANS C++ API Documentation</title>
+  </head>
+
+  <body onload="prettyPrint()">
+
+    <!-- HEADER -->
+    <div id="header_wrap" class="outer">
+        <header class="inner">
+          <a id="forkme_banner" href="https://github.com/sinya8282/RANS">View on GitHub</a>
+
+          <h1 id="project_title">RANS C++ API Documentation</h1>
+          <h2 id="project_tagline"></h2>
+
+            <section id="downloads">
+              <a class="zip_download_link" href="https://github.com/sinya8282/RANS/zipball/master">Download this project as a .zip file</a>
+              <a class="tar_download_link" href="https://github.com/sinya8282/RANS/tarball/master">Download this project as a tar.gz file</a>
+            </section>
+        </header>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
+
+<h3>Encoding Interface</h3>
+
+<p>and here is simple, but complete encode & decode REPL code.</p>
+<pre><code class="prettyprint lang-cpp">#include &lt;rans.hpp&gt;
+#include &lt;aslkdjfas&gt;
+#include &lt;cassert&gt;
+int main() {
+  std::string regex;
+  std::cin >> regex;
+  RANS rans(regex);
+  if(!rans.ok()) {
+    std::cout << rans.error() << std::endl;
+    exit(0);
+  }
+  RANS::Value value; // avoid copy 
+  std::text;
+  while (std::cin >> text) {
+    if (r.is_acceptable(text)) {
+      std::cout << "val: " << r(text, value) << std::endl;
+      std::cout << "rep: " << r(value, text) << std::endl;
+    } else {
+      std::cout << "text is not acceptable." << std::endl;
+    }
+  }
+  return 0;
+}
+</code></pre>
+      </section>
+    </div>
+
+    <!-- FOOTER  -->
+    <div id="footer_wrap" class="outer">
+      <footer class="inner">
+        <p class="copyright">RANS maintained by <a href="https://github.com/sinya8282">sinya8282</a></p>
+        <p>Published with <a href="http://pages.github.com">GitHub Pages</a></p>
+      </footer>
+    </div>
+
+    
+
+  </body>
+</html>

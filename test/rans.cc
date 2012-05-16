@@ -20,25 +20,10 @@ DEFINE_string(out, "", "output file name.");
 DEFINE_bool(size, false, "print DFA's size.");
 DEFINE_bool(repl, false, "start REPL.");
 
-const std::string version = ": "
-#ifdef RANS_DEBUG
-    "DEBUG"
-#else
-    "DEVELOP"
-#endif    
-    ", matrix lib = "
-#ifdef RANS_USE_UBLAS
-    "uBLAS"
-#else
-    "SELF"
-#endif
-    ;
-
 void set_filename(const std::string&, std::string&);
 
 int main(int argc, char* argv[])
 {
-  google::SetVersionString(version);
   google::SetUsageMessage(
       "RANS driver program.\n"
       "Usage: rans REGEX [OPTIONS ...] \n"

@@ -8,26 +8,27 @@ CC=g++
 ifeq ($(MODE),DEBUG)
 CFLAGS= -O0 -g3 -Wall -I$(PWD) -DRANS_USE_$(MATRIX_LIB) -DRANS_DEBUG
 else
-CFLAGS= -O3 -Wall -I$(PWD) -DRANS_USE_$(MATRIX_LIB)
+CFLAGS= -O3 -I$(PWD) -DRANS_USE_$(MATRIX_LIB)
 endif
 
-LFLAGS=-lgmp -lgmpxx -lgflags -lgtest -lgtest_main
+LFLAGS=-lgmp -lgmpxx
 prefix=/usr/local
 
-all: test rans 
 rans: bin/rans
 test: bin/test
+
+all: rans test
 
 check: test
 	@bin/test --gtest_color=yes
 
 bin/rans: rans.hpp test/rans.cc Makefile
 	@mkdir -p bin
-	$(CC) $(CFLAGS) test/rans.cc -o $@ $(LFLAGS)
+	$(CC) $(CFLAGS) test/rans.cc -o $@ $(LFLAGS) -lgflags
 
 bin/test: rans.hpp test/test.cc Makefile
 	@mkdir -p bin
-	$(CC) $(CFLAGS) test/test.cc -o $@ $(LFLAGS)
+	$(CC) $(CFLAGS) test/test.cc -o $@ $(LFLAGS) -lgtest -lgtest_main -lpthread
 
 install-header: rans.hpp
 	cp rans.hpp $(prefix)/include

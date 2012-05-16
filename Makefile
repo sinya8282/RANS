@@ -34,13 +34,11 @@ bin/test: rans.hpp test/test.cc Makefile
 	@mkdir -p bin
 	$(CC) $(CFLAGS) test/test.cc -o $@ $(LFLAGS)
 
-install: rans.hpp
+install-header: rans.hpp
 	cp rans.hpp $(prefix)/include
 
-install-cui: rans
+install: install-header rans
 	cp bin/rans $(prefix)/bin
-
-install-all: install install-cui
 
 uninstall:
 	rm $(prefix)/include/rans.hpp $(prefix)/bin/rans

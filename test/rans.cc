@@ -20,6 +20,7 @@ DEFINE_string(out, "", "output file name.");
 DEFINE_bool(size, false, "print the size of the DFA.");
 DEFINE_bool(repl, false, "start REPL.");
 
+void dispatch(const RANS&);
 void set_filename(const std::string&, std::string&);
 
 int main(int argc, char* argv[])
@@ -53,9 +54,13 @@ int main(int argc, char* argv[])
       std::cout << from.error() << std::endl << to.error() << std::endl;
       exit(0);
     }
-    // try without error check ;-p
+    
     if (!FLAGS_text.empty()) {
-      std::cout << to(from(FLAGS_text)) << std::endl;
+      try {
+        std::cout << to(from(FLAGS_text)) << std::endl;
+      } catch (RANS::Exception& e) {
+        std::cout << e.what() << std::endl;
+      }
     }
     return 0;
   }
@@ -66,6 +71,16 @@ int main(int argc, char* argv[])
     exit(0);
   }
 
+  try {
+    dispatch(r);
+  } catch (RANS::Exception& e) {
+    std::cout << e.what() << std::endl;
+  }
+  
+  return 0;
+}
+
+void dispatch(const RANS& r) {
   if (!FLAGS_quick_check.empty()) {
     if (r.dfa().is_acceptable(FLAGS_quick_check)) {
       std::cout << "text is acceptable." << std::endl;
@@ -87,7 +102,11 @@ int main(int argc, char* argv[])
     }
 
     std::ofstream ofs(FLAGS_out.data(), std::ios::out | std::ios::binary);
-    ofs << r.compress(text);
+    try {
+      ofs << r.compress(text);
+    } catch (const RANS::Exception &e) {
+      std::cout << e.what() << std::endl;
+    }
   } else if (!FLAGS_decompress.empty()) {
     std::ifstream ifs(FLAGS_decompress.data(), std::ios::in | std::ios::binary);
     if (ifs.fail()) {
@@ -114,16 +133,14 @@ int main(int argc, char* argv[])
     RANS::Value value;
 
     while (std::cin >> text) {
-      if (r.is_acceptable(text)) {
-        std::cout << "text is not acceptable" << std::endl;
-        continue;
+      try {
+        std::cout << r(text, value) << std::endl;
+        std::cout << r(value, text) << std::endl;
+      } catch(const RANS::Exception& e) {
+        std::cout << e.what() << std::endl;
       }
-      std::cout << r(text, value) << std::endl;
-      std::cout << r(value, text) << std::endl;
     }
   }
-  
-  return 0;
 }
 
 void set_filename(const std::string& src, std::string& dst)

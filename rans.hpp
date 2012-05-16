@@ -1292,6 +1292,10 @@ MPMatrix& power(const MPMatrix& X, std::size_t n, MPMatrix& Y)
 
 class RANS {
  public:
+  class Exception: public std::out_of_range {
+   public:
+    Exception(const std::string& error): std::out_of_range(error) {}
+  };
   enum Encoding { ASCII = 0, UTF8 = 1 };
   typedef rans::Value Value;
   RANS(const std::string&, Encoding);
@@ -1309,8 +1313,8 @@ class RANS {
   Value operator()(const std::string& text) const { return val(text); }
   std::string& operator()(const Value& value, std::string& text) const { return rep(value, text); }
   std::string operator()(const Value& value) const { return rep(value); }
-  std::string& compress(std::string&);
-  std::string& decompress(std::string&);
+  std::string& compress(std::string&) const;
+  std::string& decompress(std::string&) const;
   static const RANS baseBYTE;
  private:
   //DISALLOW COPY AND ASSIGN
@@ -1369,7 +1373,7 @@ RANS::RANS(const std::string &regex, Encoding enc = ASCII): _ok(true), _dfa(rege
 // This implementation runs in time O(n * |D|^2) where n is the length of the text
 // and |D| is the size of(number of states of) the DFA.
 //
-// Behaiviro is UNSPECIFIED when text is not acceptable.
+// val() throws exception when text is not acceptable.
 // Therefore caller should assure that text is acceptable when calling this function.
 // caller could check like as: "if(is_accept(text)) val(text, value);".
 RANS::Value& RANS::val(const std::string& text, Value& value) const
@@ -1391,8 +1395,7 @@ RANS::Value& RANS::val(const std::string& text, Value& value) const
   }
 
   if (state == DFA::REJECT || !_dfa.is_acceptable(state)) {
-    // UNSPECIFIED: currentaly returns -1;
-    return value = -1;
+    throw Exception("invalid text: text is not acceptable.");
   }
 
   inner_prod(paths, _accept_vector, value);
@@ -1420,11 +1423,6 @@ std::string& RANS::rep(const Value& value, std::string& text) const
   Value value_ = value, val, val_;
   text = "";
   int len = floor(value_);
-
-  if (len < 0) {
-    // UNSPECIFIED: currentaly returns "";
-    return text;
-  }
 
   for (; len > 0; len--) {
     if (len == 1) {
@@ -1485,8 +1483,8 @@ int RANS::floor(Value& value) const
     prod(tmpM, tmpM);
     if (length > size() &&
         tmpM(DFA::START, _extended_state) == tmpM_(DFA::START, _extended_state)) {
-      // correspoding text is not exists. (theoretical judgment via Pumping lemma!)
-      return -1; // UNSPECIFIED: currentaly returns -1;
+      // correspoding text does not exists. (theoretical judgment via Pumping lemma)
+      throw Exception("invalid value: correspoinding text does not exists.");
     }
     length *= 2;
   } while (tmpM(DFA::START, _extended_state) + match_epsilon <= value);
@@ -1505,13 +1503,13 @@ int RANS::floor(Value& value) const
 
 const RANS RANS::baseBYTE(".*");
 
-std::string& RANS::compress(std::string& text)
+std::string& RANS::compress(std::string& text) const
 {
   Value value;
   return baseBYTE(val(text, value), text);
 }
 
-std::string& RANS::decompress(std::string& text)
+std::string& RANS::decompress(std::string& text) const
 {
   Value value;
   return rep(baseBYTE(text, value), text);

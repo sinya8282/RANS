@@ -1,6 +1,6 @@
 # RANS make rules. REQUIRES: gmpxx, gflags, gtest
 
-MODE=RELEASE    #or DEBUG
+MODE=DEVELOP    #or DEBUG
 MATRIX_LIB=SELF #or UBLAS
 
 CC=g++

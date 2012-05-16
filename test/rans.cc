@@ -24,7 +24,7 @@ const std::string version = ": "
 #ifdef RANS_DEBUG
     "DEBUG"
 #else
-    "RELEASE"
+    "DEVELOP"
 #endif    
     ", matrix lib = "
 #ifdef RANS_USE_UBLAS

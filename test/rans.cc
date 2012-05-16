@@ -1,9 +1,9 @@
+#include <gflags/gflags.h>
 #include <rans.hpp>
 
 #include <iostream>
 #include <fstream>
 #include <string>
-#include <gflags/gflags.h>
 
 DEFINE_string(f, "", "obtain patterns from FILE.");
 DEFINE_string(text, "", "print value of given text on ANS.");
@@ -37,30 +37,42 @@ int main(int argc, char* argv[])
   }
   
   std::string regex;
-  if (FLAGS_f != "") {
+  if (!FLAGS_f.empty()) {
     std::ifstream ifs(FLAGS_f.data());
     ifs >> regex;
   } else if (argc > 1) {
     regex = argv[1];
-  } else {
+  } else if (FLAGS_convert_from.empty() || FLAGS_convert_to.empty()) {
     exit(0);
   }
 
   RANS::Encoding enc = FLAGS_utf8 ? RANS::UTF8 : RANS::ASCII;
-  RANS r(regex, enc);
+  if (!FLAGS_convert_from.empty() && !FLAGS_convert_to.empty()) {
+    RANS from(FLAGS_convert_from), to(FLAGS_convert_to);
+    if (!from.ok() || !to.ok()) {
+      std::cout << from.error() << std::endl << to.error() << std::endl;
+      exit(0);
+    }
+    // try without error check ;-p
+    if (!FLAGS_text.empty()) {
+      std::cout << to(from(FLAGS_text)) << std::endl;
+    }
+    return 0;
+  }
 
+  RANS r(regex, enc);
   if (!r.ok()) {
     std::cout << r.error() << std::endl;
     exit(0);
   }
 
-  if (FLAGS_quick_check != "") {
+  if (!FLAGS_quick_check.empty()) {
     if (r.dfa().is_acceptable(FLAGS_quick_check)) {
       std::cout << "text is acceptable." << std::endl;
     } else {
       std::cout << "text is not acceptable." << std::endl;
     }
-  } else if (FLAGS_compress != "") {
+  } else if (!FLAGS_compress.empty()) {
     std::string text;
     std::ifstream ifs(FLAGS_compress.data(), std::ios::in | std::ios::binary);
     if (ifs.fail()) {
@@ -69,15 +81,14 @@ int main(int argc, char* argv[])
     }
     ifs >> text;
 
-    if (FLAGS_out == "") {
+    if (FLAGS_out.empty()) {
       FLAGS_out = FLAGS_compress;
       FLAGS_out += ".rans";
     }
 
     std::ofstream ofs(FLAGS_out.data(), std::ios::out | std::ios::binary);
-
     ofs << r.compress(text);
-  } else if (FLAGS_decompress != "") {
+  } else if (!FLAGS_decompress.empty()) {
     std::ifstream ifs(FLAGS_decompress.data(), std::ios::in | std::ios::binary);
     if (ifs.fail()) {
       std::cout << FLAGS_decompress + " does not exists." << std::endl;
@@ -89,15 +100,14 @@ int main(int argc, char* argv[])
     std::string text(first, last);
 
     set_filename(FLAGS_decompress, FLAGS_out);
-    if (FLAGS_out == "") exit(0);
+    if (FLAGS_out.empty()) exit(0);
     std::ofstream ofs(FLAGS_out.data(), std::ios::out | std::ios::binary);
-
     ofs << r.decompress(text);
   } else if (FLAGS_size) {
     std::cout << "size of DFA: " << r.dfa().size() << std::endl;
-  } else if (FLAGS_value != "") {
+  } else if (!FLAGS_value.empty()) {
     std::cout << r(RANS::Value(FLAGS_value)) << std::endl;
-  } else if (FLAGS_text != "") {
+  } else if (!FLAGS_text.empty()) {
     std::cout << r(FLAGS_text) << std::endl;
   } else if (FLAGS_repl) {
     std::string text;
@@ -118,7 +128,7 @@ int main(int argc, char* argv[])
 
 void set_filename(const std::string& src, std::string& dst)
 {
-  if (dst != "") return;
+  if (!dst.empty()) return;
 
   static const std::string suffix = ".rans";
 

@@ -1,5 +1,5 @@
-#include <rans.hpp>
 #include <gtest/gtest.h>
+#include <rans.hpp>
 #include <map>
 #include <string>
 

@@ -1076,8 +1076,8 @@ bool DFA::is_acceptable(const std::string& text) const
   return is_acceptable(state);
 }
 
-// TODO: advanced optimization for Power of Matrix (Diagonalization!!)
-// Does anyone know good solution or (multi-precision) matrix library?
+// TODO: advanced optimization for Power of Matrix.
+// Does anyone know good (multi-precision) matrix library?
 
 typedef mpz_class Value;
 
@@ -1277,7 +1277,8 @@ Value& inner_prod(const MPVector& V, const MPVector& W, Value& v)
 }
 #endif // RANS_USE_UBLAS
 
-// return Y = X^n, O(|X|^3 log n)-s factor-wise multiplications.
+// returns Y = X^n, with O(|X|^3 log n)-s factor-wise multiplications.
+// TODO: It seems more optimizable using linear algebraic techniques.
 MPMatrix& power(const MPMatrix& X, std::size_t n, MPMatrix& Y)
 {
   if (n == 0) Y = MPIdentityMatrix(X.size1());
@@ -1361,15 +1362,15 @@ RANS::RANS(const std::string &regex, Encoding enc = ASCII): _ok(true), _dfa(rege
   if (FLAGS_dump_matrix) std::cout << _adjacency_matrix << std::endl;
 }
 
-// val(), which caliculate value corresponds text, is fundamental function of ANS.
+// val(), which caliculates the value corresponds given text, is fundamental function of ANS.
 // val() is bijection: L -> N where L is set of acceptable string defined by
 // regular expression (DFA), and N is natural number (include 0).
 // (inverse function of this is rep())
 //
-// This implementation runs in time O(n log |D|^2) such where n is the length of text
-// and |D| is the size of(number of states of) DFA.
+// This implementation runs in time O(n * |D|^2) where n is the length of the text
+// and |D| is the size of(number of states of) the DFA.
 //
-// The return value is unspecified when text is not acceptable.
+// Behaiviro is UNSPECIFIED when text is not acceptable.
 // Therefore caller should assure that text is acceptable when calling this function.
 // caller could check like as: "if(is_accept(text)) val(text, value);".
 RANS::Value& RANS::val(const std::string& text, Value& value) const
@@ -1400,15 +1401,15 @@ RANS::Value& RANS::val(const std::string& text, Value& value) const
   return value;
 }
 
-// rep(), which caliculate text corresponds value, is fundamental function of ANS.
+// rep(), which caliculates the text corresponds given value, is fundamental function of ANS.
 // rep() is bijection: N -> L where and N is natural number (include 0) and L is
 // set of acceptable string defined by regular expression (DFA).
 // (inverse function of this is val())
 //
-// This implementation runs in time roughly O(n log |D|^3) where n is the length
+// This implementation runs in time roughly O(n log n |D|^3) where n is the length
 // of text and |D| is the size of(number of states of) DFA.
 //
-// The return text is unspecified when there is no text s.t. val(text) == value.
+// Behaiviro is UNSPECIFIED when there exists no text s.t. val(text) == value.
 // Therefore caller should assure that there exists a correspoding text when
 // calling this function. but don't worry, this condition is always true if caller
 // got the value via val() just like: "value = val(text)"
@@ -1483,6 +1484,11 @@ int RANS::floor(Value& value) const
   do {
     tmpM_ = tmpM;
     prod(tmpM, tmpM);
+    if (length > size() &&
+        tmpM(DFA::START, _extended_state) == tmpM_(DFA::START, _extended_state)) {
+      // correspoding text is not exists. (theoretical judgment via Pumping lemma!)
+      return -1; // UNSPECIFIED: currentaly returns -1;
+    }
     length *= 2;
   } while (tmpM(DFA::START, _extended_state) + match_epsilon <= value);
 

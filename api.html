@@ -34,10 +34,46 @@
     <div id="main_content_wrap" class="outer">
       <section id="main_content" class="inner">
 
+<h3>Pre-Compiled Regular Expressions</h3>
+<p>To use RANS is pretty easy. first of all, you should compile it once to an RANS object and reuse that object for each call.</p>
+
+<p>Example:</p>
+
+<pre><code class="prettyprint">RANS rans("[ab]*[ac][abc]{3}");
+assert(rans.ok); // compiled; if not, see rans.error();</code></pre>
+
 <h3>Encoding Interface</h3>
+<p>There are two fundamental functions: RANS::val requires string that can be matched against a regular expression, and RANS::rep, which is inverse function of RANS::val, looks for a corressponding string by given value. </br>
+These functions are wrapped RANS::operator()</p>
+
+<p>Example:</p>
+<pre><code class="prettyprint">RANS rans("a*(b*|c*)");
+assert(rans("aaa")==9); // rans.rep("aaa") 
+assert(rans(9)=="aaa"); // rans.val(9) 
+assert(rans("")==0);    // rans.rep("")
+</code></pre>
+
+<p>The return value of RANS::val and argument of RANS::rep is RANS::Value. that is wrapper type of mpz_class (in gmpxx.h)</p>
+<pre><code class="prettyprint">RANS rans("a*(b*|c*)");
+RANS::Value value; std::string text = "aaa";
+assert(rans(text, value)==9); // set value to 9, and return reference
+assert(rans(value, text)=="aaa"); // set text to "aaa", and return reference
+</code></pre>
+
+<h3>Unspecified Behavior</h3>
+
+<p>If you give a bad string (or value) to RANS::val (or RANS::rep),,, I don't know, It's Unspecified. (what is best? return an error number or throw an exception?).</br></br>
+Therefore, You should assure that string is acceptable when calling RANS::rep. you can verify whether string is acceptable via RANS::is_accept method just like:
+</p>
+<pre><code class="prettyprint">RANS rans("a*(b*|c*)");
+if(rans.is_accept(text)) val(text, value);
+else // something
+</code></pre>
+
 <h3>Sample Code</h3>
 <p>Here is the code of the simple but complete encode & decode REPL program.</p>
-<pre><code class="prettyprint lang-cpp">#include &lt;rans.hpp&gt;
+<pre><code class="prettyprint">// repl.cc
+#include &lt;rans.hpp&gt;
 #include &lt;iostream&gt;
 
 int main() {
@@ -65,6 +101,17 @@ int main() {
   return 0;
 }
 </code></pre>
+
+<p>You could compile this like as:</p>
+
+<pre><code class="prettyprint lang-sh">$ g++ repl.cc -lgmp -lgmpxx -o repl
+$ ./repl
+</code></pre>
+
+<h3>Additional Tips and Tricks</h3>
+<p>For advanced usage, like compression, or something that uses a DFA directly, see <a href="http://github.com/sinya8282/RANS/blob/master/rans.hpp">rans.hpp</a> or codes in test directory.</p>
+
+
       </section>
     </div>
 

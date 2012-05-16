@@ -6,18 +6,18 @@
 #include <string>
 
 DEFINE_string(f, "", "obtain patterns from FILE.");
-DEFINE_string(text, "", "print value of given text on ANS.");
+DEFINE_string(text, "", "print the value of given text on ANS.");
 DEFINE_string(quick_check, "", "check wheter given text is acceptable or not.");
-DEFINE_string(value, "", "print text of given value on ANS.");
+DEFINE_string(value, "", "print the text of given value on ANS.");
 DEFINE_bool(verbose, false, "report additional informations.");
 DEFINE_bool(syntax, false, "print RANS regular expression syntax.");
 DEFINE_bool(utf8, false, "use utf8 as internal encoding.");
-DEFINE_string(convert_from, "", "convert given value base from given expression.");
-DEFINE_string(convert_to, "", "convert given value base to given expression.");
-DEFINE_string(compress, "", "compress given file (create '.rans' file, by default).");
-DEFINE_string(decompress, "", "decompress given file");
+DEFINE_string(convert_from, "", "convert the given value base from the given expression.");
+DEFINE_string(convert_to, "", "convert the given value base to the given expression.");
+DEFINE_string(compress, "", "compress the given file (create '.rans' file, by default).");
+DEFINE_string(decompress, "", "decompress the given file");
 DEFINE_string(out, "", "output file name.");
-DEFINE_bool(size, false, "print DFA's size.");
+DEFINE_bool(size, false, "print the size of the DFA.");
 DEFINE_bool(repl, false, "start REPL.");
 
 void set_filename(const std::string&, std::string&);
@@ -25,9 +25,9 @@ void set_filename(const std::string&, std::string&);
 int main(int argc, char* argv[])
 {
   google::SetUsageMessage(
-      "RANS driver program.\n"
+      "RANS command line tool.\n"
       "Usage: rans REGEX [OPTIONS ...] \n"
-      "You can check RANS extended regular expression syntax by '--syntax' option.\n\n"
+      "You can check RANS extended regular expression syntax via '--syntax' option.\n\n"
       "OPTIONS:");
   google::ParseCommandLineFlags(&argc, &argv, true);
 

@@ -30,10 +30,7 @@ bin/test: rans.hpp test/test.cc Makefile
 	@mkdir -p bin
 	$(CXX) $(CFLAGS) test/test.cc -o $@ $(LFLAGS) -lgtest -lgtest_main -lpthread
 
-install-header: rans.hpp
-	cp rans.hpp $(prefix)/include
-
-install: install-header rans
+install: rans.hpp rans
 	cp bin/rans $(prefix)/bin
 
 uninstall:

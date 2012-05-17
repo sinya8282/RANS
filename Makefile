@@ -20,21 +20,21 @@ test: bin/test
 all: rans test
 
 check: test
-	@$(PWD)/bin/test --gtest_color=yes
+	@bin/test --gtest_color=yes
 
 bin/rans: rans.hpp test/rans.cc Makefile
-	@mkdir -p $(PWD)/bin
-	$(CXX) $(CFLAGS) test/rans.cc -o $(PWD)/$@ $(LFLAGS) -lgflags
+	@mkdir -p bin
+	$(CXX) $(CFLAGS) test/rans.cc -o $@ $(LFLAGS) -lgflags
 
 bin/test: rans.hpp test/test.cc Makefile
-	@mkdir -p $(PWD)/bin
-	$(CXX) $(CFLAGS) test/test.cc -o $(PWD)/$@ $(LFLAGS) -lgtest -lgtest_main -lpthread
+	@mkdir -p bin
+	$(CXX) $(CFLAGS) test/test.cc -o $@ $(LFLAGS) -lgtest -lgtest_main -lpthread
 
 install-header: rans.hpp
 	cp rans.hpp $(prefix)/include
 
 install: install-header rans
-	cp $(PWD)/bin/rans $(prefix)/bin
+	cp bin/rans $(prefix)/bin
 
 uninstall:
 	rm $(prefix)/include/rans.hpp $(prefix)/bin/rans

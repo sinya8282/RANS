@@ -6,9 +6,9 @@ MATRIX_LIB=SELF #or UBLAS
 CC=g++
 
 ifeq ($(MODE),DEBUG)
-CFLAGS= -O0 -g3 -Wall -I$(PWD) -DRANS_USE_$(MATRIX_LIB) -DRANS_DEBUG
+CFLAGS= -O0 -g3 -Wall -I${shell pwd} -DRANS_USE_$(MATRIX_LIB) -DRANS_DEBUG
 else
-CFLAGS= -O3 -I$(PWD) -DRANS_USE_$(MATRIX_LIB)
+CFLAGS= -O3 -I${shell pwd} -DRANS_USE_$(MATRIX_LIB)
 endif
 
 LFLAGS=-lgmp -lgmpxx

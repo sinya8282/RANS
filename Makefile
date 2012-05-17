@@ -31,6 +31,9 @@ bin/test: rans.hpp test/test.cc Makefile
 	$(CXX) $(CFLAGS) test/test.cc -o $@ $(LFLAGS) -lgtest -lgtest_main -lpthread
 
 install: rans.hpp rans
+	ls $(PWD)
+	ls ${shell pwd}
+	ls bin
 	cp bin/rans $(prefix)/bin
 
 uninstall:

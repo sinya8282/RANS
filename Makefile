@@ -3,7 +3,7 @@
 MODE=DEVELOP    #or DEBUG
 MATRIX_LIB=SELF #or UBLAS
 
-CC=g++
+CXX=g++
 
 ifeq ($(MODE),DEBUG)
 CFLAGS= -O0 -g3 -Wall -I${shell pwd} -DRANS_USE_$(MATRIX_LIB) -DRANS_DEBUG
@@ -24,11 +24,11 @@ check: test
 
 bin/rans: rans.hpp test/rans.cc Makefile
 	@mkdir -p bin
-	$(CC) $(CFLAGS) test/rans.cc -o $@ $(LFLAGS) -lgflags
+	$(CXX) $(CFLAGS) test/rans.cc -o $@ $(LFLAGS) -lgflags
 
 bin/test: rans.hpp test/test.cc Makefile
 	@mkdir -p bin
-	$(CC) $(CFLAGS) test/test.cc -o $@ $(LFLAGS) -lgtest -lgtest_main -lpthread
+	$(CXX) $(CFLAGS) test/test.cc -o $@ $(LFLAGS) -lgtest -lgtest_main -lpthread
 
 install-header: rans.hpp
 	cp rans.hpp $(prefix)/include

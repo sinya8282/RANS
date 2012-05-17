@@ -3,10 +3,11 @@ MATRIX_LIB=SELF #or UBLAS
 
 CXX=g++
 ifeq ($(MODE),DEBUG)
-CXXFLAGS= -O0 -g3 -Wall -I${shell pwd} -DRANS_USE_$(MATRIX_LIB) -DRANS_DEBUG
+CXXFLAGS=-O0 -g3 -Wall -DRANS_DEBUG
 else
-CXXFLAGS= -O3 -I${shell pwd} -DRANS_USE_$(MATRIX_LIB)
+CXXFLAGS=-O3
 endif
+RANS_CXXFLAGS=-I${shell pwd} -DRANS_USE_$(MATRIX_LIB) -lgmp -lgmpxx
 
 prefix=/usr/local
 exec_prefix=$(prefix)
@@ -27,11 +28,11 @@ check: test
 
 bin/rans: rans.hpp test/rans.cc Makefile
 	@mkdir -p $$(dirname $@)
-	$(CXX) $(CXXFLAGS) test/rans.cc -o $@ $(LFLAGS) -lgflags -lgmp -lgmpxx
+	$(CXX) $(CXXFLAGS) $(RANS_CXXFLAGS) test/rans.cc -o $@ -lgflags
 
 bin/test: rans.hpp test/test.cc Makefile
 	@mkdir -p $$(dirname $@)
-	$(CXX) $(CXXFLAGS) test/test.cc -o $@ $(LFLAGS) -lgtest -lgtest_main -lpthread -lgmp -lgmpxx
+	$(CXX) $(CXXFLAGS) $(RANS_CXXFLAGS) test/test.cc -o $@ -lgtest -lgtest_main -lpthread
 
 install: rans.hpp rans
 	mkdir -p $(DESTDIR)$(includedir) $(DESTDIR)$(bindir)

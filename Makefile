@@ -34,8 +34,9 @@ bin/test: rans.hpp test/test.cc Makefile
 	$(CXX) $(CXXFLAGS) test/test.cc -o $@ $(LFLAGS) -lgtest -lgtest_main -lpthread -lgmp -lgmpxx
 
 install: rans.hpp rans
-	mkdir -p $(DESTDIR)$(includedir) $(DESTDIR)$(bindir)
+	echo "yes"
 
+#mkdir -p $(DESTDIR)$(includedir) $(DESTDIR)$(bindir)
 # $(INSTALL_DATA) rans.hpp $(DESTDIR)$(includedir)/rans.hpp
 # $(INSTALL_PROGRAM) bin/rans $(DESTDIR)$(bindir)/rans
 

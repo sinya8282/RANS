@@ -60,14 +60,15 @@ assert(rans(text, value)==9); // set value to 9, and return reference
 assert(rans(value, text)=="aaa"); // set text to "aaa", and return reference
 </code></pre>
 
-<h3>Unspecified Behavior</h3>
+<h3>Exception</h3>
 
-<p>If you give a bad string (or value) to RANS::val (or RANS::rep),,, I don't know, It's Unspecified. (what is best? return an error number or throw an exception?).</br></br>
+<p>An RANS::Exception will be thrown If you give a bad (not acceptable) string (or value) to RANS::val. </br></br>
 Therefore, You should assure that string is acceptable when calling RANS::rep. you can verify whether string is acceptable via RANS::is_accept method just like:
 </p>
 <pre><code class="prettyprint">RANS rans("a*(b*|c*)");
 if(rans.is_accept(text)) val(text, value);
-else // something
+RANS only_accept_a("a");
+only_accept_a("b"); // raise exception!
 </code></pre>
 
 <h3>Sample Code</h3>
@@ -90,11 +91,11 @@ int main() {
   RANS::Value value;
   std::string text;
   while (std::cout << "text: " && std::cin >> text) {
-    if (rans.is_acceptable(text)) {
+    try {
       std::cout << "val(text):  " << rans(text, value) << std::endl;
       std::cout << "rep(value): " << rans(value, text) << std::endl;
-    } else {
-      std::cout << "text is not acceptable." << std::endl;
+    } catch (const RANS::Exception& e) {
+      std::cout << e.what() << std::endl;
     }
   }
 

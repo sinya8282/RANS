@@ -39,8 +39,9 @@ install: rans.hpp rans
 	echo $(PWD)
 	ls $(PWD)
 	mkdir -p $(DESTDIR)$(includedir) $(DESTDIR)$(bindir)
-	$(INSTALL_DATA) rans.hpp $(DESTDIR)$(includedir)/rans.hpp
-	$(INSTALL_PROGRAM) bin/rans $(DESTDIR)$(bindir)/rans
+
+# $(INSTALL_DATA) rans.hpp $(DESTDIR)$(includedir)/rans.hpp
+# $(INSTALL_PROGRAM) bin/rans $(DESTDIR)$(bindir)/rans
 
 uninstall:
 	rm $(DESTDIR)$(includedir)/rans.hpp $(DESTDIR)$(bindir)/rans

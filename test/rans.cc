@@ -27,9 +27,9 @@ int main(int argc, char* argv[])
 {
   google::SetUsageMessage(
       "RANS command line tool.\n"
-      "Usage: rans REGEX [OPTIONS ...] \n"
-      "You can check RANS extended regular expression syntax via '--syntax' option.\n\n"
-      "OPTIONS:");
+      "Usage: rans REGEX [Flags ...] \n"
+      "You can check RANS extended regular expression syntax via '--syntax' option."
+                          );
   google::ParseCommandLineFlags(&argc, &argv, true);
 
   if (FLAGS_syntax) {
@@ -44,7 +44,8 @@ int main(int argc, char* argv[])
   } else if (argc > 1) {
     regex = argv[1];
   } else if (FLAGS_convert_from.empty() || FLAGS_convert_to.empty()) {
-    exit(0);
+    std::cout << google::ProgramUsage() << std::endl;
+    return 0;
   }
 
   RANS::Encoding enc = FLAGS_utf8 ? RANS::UTF8 : RANS::ASCII;
@@ -75,6 +76,7 @@ int main(int argc, char* argv[])
     dispatch(r);
   } catch (RANS::Exception& e) {
     std::cout << e.what() << std::endl;
+    exit(0);
   }
   
   return 0;
@@ -103,7 +105,8 @@ void dispatch(const RANS& r) {
 
     std::ofstream ofs(FLAGS_out.data(), std::ios::out | std::ios::binary);
     try {
-      ofs << r.compress(text);
+      std::string dst;
+      ofs << r.compress(text, dst);
     } catch (const RANS::Exception &e) {
       std::cout << e.what() << std::endl;
     }
@@ -121,7 +124,12 @@ void dispatch(const RANS& r) {
     set_filename(FLAGS_decompress, FLAGS_out);
     if (FLAGS_out.empty()) exit(0);
     std::ofstream ofs(FLAGS_out.data(), std::ios::out | std::ios::binary);
-    ofs << r.decompress(text);
+    try {
+      std::string dst;
+      ofs << r.decompress(text, dst);
+    } catch (const RANS::Exception &e) {
+      std::cout << e.what() << std::endl;
+    }
   } else if (FLAGS_size) {
     std::cout << "size of DFA: " << r.dfa().size() << std::endl;
   } else if (!FLAGS_value.empty()) {
@@ -151,7 +159,7 @@ void set_filename(const std::string& src, std::string& dst)
 
   if (src.length() > suffix.length() &&
       src.substr(src.length() - suffix.length(), std::string::npos) == suffix) {
-    dst = src.substr(0, src.length() - suffix.length() - 1);
+    dst = src.substr(0, src.length() - suffix.length());
   } else {
     std::string input = "dummy";
     do {

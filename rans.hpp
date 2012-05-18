@@ -1313,8 +1313,10 @@ class RANS {
   Value operator()(const std::string& text) const { return val(text); }
   std::string& operator()(const Value& value, std::string& text) const { return rep(value, text); }
   std::string operator()(const Value& value) const { return rep(value); }
-  std::string& compress(std::string&) const;
-  std::string& decompress(std::string&) const;
+  std::string compress(const std::string& text) const { std::string dst; return compress(text, dst); }
+  std::string decompress(const std::string& text) const { std::string dst; return decompress(text, dst); }
+  std::string& compress(const std::string&, std::string&) const;
+  std::string& decompress(const std::string&, std::string&) const;
   static const RANS baseBYTE;
  private:
   //DISALLOW COPY AND ASSIGN
@@ -1503,16 +1505,16 @@ int RANS::floor(Value& value) const
 
 const RANS RANS::baseBYTE(".*");
 
-std::string& RANS::compress(std::string& text) const
+std::string& RANS::compress(const std::string& text, std::string& dst) const
 {
   Value value;
-  return baseBYTE(val(text, value), text);
+  return baseBYTE(val(text, value), dst);
 }
 
-std::string& RANS::decompress(std::string& text) const
+std::string& RANS::decompress(const std::string& text, std::string& dst) const
 {
   Value value;
-  return rep(baseBYTE(text, value), text);
+  return rep(baseBYTE(text, value), dst);
 }
 
 } // namespace rans

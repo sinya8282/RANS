@@ -84,7 +84,7 @@ int main(int argc, char* argv[])
 
 void dispatch(const RANS& r) {
   if (!FLAGS_quick_check.empty()) {
-    if (r.dfa().is_acceptable(FLAGS_quick_check)) {
+    if (r.dfa().accept(FLAGS_quick_check)) {
       std::cout << "text is acceptable." << std::endl;
     } else {
       std::cout << "text is not acceptable." << std::endl;

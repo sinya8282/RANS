@@ -30,7 +30,7 @@ struct testcase {
   bool result;
 };
 
-TEST(ELEMENTAL_TEST, DFA_IS_ACCEPTABLE) {
+TEST(ELEMENTAL_TEST, DFA_ACCEPT) {
   testcase accept_test[] = {
     testcase("abc", "abc", true),
     testcase("abc", "xbc", false),
@@ -132,7 +132,7 @@ TEST(ELEMENTAL_TEST, DFA_IS_ACCEPTABLE) {
   for (std::size_t i = 0; i < num_of_test; i++) {
     try {
       rans::DFA d(accept_test[i].regex);
-      ASSERT_EQ(accept_test[i].result, d.is_acceptable(accept_test[i].text))
+      ASSERT_EQ(accept_test[i].result, d.accept(accept_test[i].text))
           << "regex: " << accept_test[i].regex << ", text: " << accept_test[i].text;
     } catch(const char* msg) {
       std::cout << "regex: " << accept_test[i].regex

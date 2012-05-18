@@ -785,8 +785,8 @@ class DFA {
   std::size_t size() const { return _states.size(); }
   const State& state(std::size_t i) const { return _states[i]; }
   State& state(std::size_t i) { return _states[i]; }
-  bool is_acceptable(int state) const { return state != REJECT && _states[state].accept; }
-  bool is_acceptable(const std::string&) const;
+  bool accept(int state) const { return state != REJECT && _states[state].accept; }
+  bool accept(const std::string&) const;
   const State& operator[](std::size_t i) const { return _states[i]; }
   State& operator[](std::size_t i) { return _states[i]; }
   void minimize();
@@ -1064,7 +1064,7 @@ void DFA::minimize()
   _states.resize(minimum_size);
 }
 
-bool DFA::is_acceptable(const std::string& text) const
+bool DFA::accept(const std::string& text) const
 {
   int state = START;
   for (std::size_t i = 0; i < text.length(); i++) {
@@ -1072,7 +1072,7 @@ bool DFA::is_acceptable(const std::string& text) const
     if (state == REJECT) return false;
   }
 
-  return is_acceptable(state);
+  return accept(state);
 }
 
 // TODO: advanced optimization for Power of Matrix.
@@ -1301,7 +1301,7 @@ class RANS {
   RANS(const std::string&, Encoding);
   bool ok() const { return _ok; }
   const std::string& error() const { return _error; }
-  bool is_acceptable(const std::string& text) const { return _dfa.is_acceptable(text); }
+  bool accept(const std::string& text) const { return _dfa.accept(text); }
   Value& val(const std::string&, Value&) const;
   Value val(const std::string& text) const { Value value; return val(text, value); }
   std::string& rep(const Value&, std::string &) const;
@@ -1349,13 +1349,13 @@ RANS::RANS(const std::string &regex, Encoding enc = ASCII): _ok(true), _dfa(rege
   _accept_vector.resize(size());
   
   for (std::size_t i = 0; i < size(); i++) {
-    if (_dfa.is_acceptable(i)) _accept_vector[i] = 1;
+    if (_dfa.accept(i)) _accept_vector[i] = 1;
 
     for (std::size_t c = 0; c < 256; c++) {
       if (_dfa[i][c] != DFA::REJECT) {
         _adjacency_matrix(i, _dfa[i][c])++;
         _extended_adjacency_matrix(i, _dfa[i][c])++;
-        if (_dfa.is_acceptable(_dfa[i][c])) {
+        if (_dfa.accept(_dfa[i][c])) {
           _extended_adjacency_matrix(i, _extended_state)++;
         }
       }
@@ -1377,7 +1377,7 @@ RANS::RANS(const std::string &regex, Encoding enc = ASCII): _ok(true), _dfa(rege
 //
 // val() throws exception when text is not acceptable.
 // Therefore caller should assure that text is acceptable when calling this function.
-// caller could check like as: "if(is_accept(text)) val(text, value);".
+// caller could check like as: "if(accept(text)) val(text, value);".
 RANS::Value& RANS::val(const std::string& text, Value& value) const
 {
   int state = DFA::START;
@@ -1396,7 +1396,7 @@ RANS::Value& RANS::val(const std::string& text, Value& value) const
     }
   }
 
-  if (state == DFA::REJECT || !_dfa.is_acceptable(state)) {
+  if (state == DFA::REJECT || !_dfa.accept(state)) {
     throw Exception("invalid text: text is not acceptable.");
   }
 
@@ -1431,7 +1431,7 @@ std::string& RANS::rep(const Value& value, std::string& text) const
       std::size_t val = 0;
       for (std::size_t c = 0; c < 256; c++) {
         int next = _dfa[state][c];
-        if (_dfa.is_acceptable(next) && ++val > value_) {
+        if (_dfa.accept(next) && ++val > value_) {
           text.append(1, c); // complete, text == rep(value).
           break;
         }
@@ -1450,7 +1450,7 @@ std::string& RANS::rep(const Value& value, std::string& text) const
 
       val_ = val; // save before value
       for (std::size_t i = 0; i < size(); i++) {
-        if (_dfa.is_acceptable(i)) val += tmpM(next, i);
+        if (_dfa.accept(i)) val += tmpM(next, i);
       }
 
       if (val > value_) {
@@ -1467,7 +1467,7 @@ std::string& RANS::rep(const Value& value, std::string& text) const
 
 int RANS::floor(Value& value) const
 {
-  const int match_epsilon = _dfa.is_acceptable(DFA::START) ? 1 : 0;
+  const int match_epsilon = _dfa.accept(DFA::START) ? 1 : 0;
   if (value < match_epsilon) return 0;
 
   MPMatrix tmpM(size()+1, size()+1), tmpM_(size()+1, size()+1);

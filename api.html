@@ -63,10 +63,10 @@ assert(rans(value, text)=="aaa"); // set text to "aaa", and return reference
 <h3>Exception</h3>
 
 <p>An RANS::Exception will be thrown If you give a bad (not acceptable) string (or value) to RANS::val. </br></br>
-Therefore, You should assure that string is acceptable when calling RANS::rep. you can verify whether string is acceptable via RANS::is_accept method just like:
+Therefore, You should assure that string is acceptable when calling RANS::rep. you can verify whether string is acceptable via RANS::accept method just like:
 </p>
 <pre><code class="prettyprint">RANS rans("a*(b*|c*)");
-if(rans.is_accept(text)) val(text, value);
+if(rans.accept(text)) val(text, value);
 RANS only_accept_a("a");
 only_accept_a("b"); // raise exception!
 </code></pre>

@@ -1419,6 +1419,8 @@ RANS::Value& RANS::val(const std::string& text, Value& value) const
 // got the value via val() just like: "value = val(text)"
 std::string& RANS::rep(const Value& value, std::string& text) const
 {
+  if (value < 0) throw Exception("invalid value: correspoinding text does not exists.");
+  
   MPMatrix tmpM(size(), size());
   MPVector V(size()), tmpV(size());
   int state = DFA::START;

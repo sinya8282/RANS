@@ -39,11 +39,11 @@
         <h3>Introduction</h3>
 
 <p>RANS is a library, implementation of Abstract Numeration System (ANS) on a regular language.</br>
-RANS's concept is very simple, just caliculates a number from given string on a regular language. In other words,
+RANS's concept is very simple, just caliculates the number from given string on a regular language. In other words,
 <ul>
   <li>RANS provides a minimal perfect hash function that maps string to positive integer.</li>
-  <li>RANS provides a 'val' that is bijection from N onto a language.</li>
-  <li>　　 and 'rep' is inverse function of 'val'.</li>
+  <li>RANS provides the 'val' that is a bijective function from N onto a language.</li>
+  <li>　　 and 'rep' is a inverse function of 'val'.</li>
   <li>RANS makes set of acceptable string totally ordered by <a href="http://en.wikipedia.org/wiki/Lexicographical_order#Ordering_of_sequences_of_various_lengths">Lexicographic order</a>.</li>
 </ul>
 Example, let regular language L = { "", "a", "b", "c", "aa", "ab", "ac", "bb", "cc", "aaa", ... }, map val: L -> N, and inverse function rep: N -> L. then:
@@ -135,7 +135,7 @@ such as:
 </code></pre>
 (my handwritten, might be wrong :-p)
 
-<p>This is hairy, pathological expression. However, the minimal DFA that corresponds this has only 26 states. I generated one graph of this DFA via --dump_dfa option (also this expression is contained in a repository: test/<a href="http://github.com/sinya8282/RANS/blob/master/test/http-url.regex">http-url.regex</a>).</p>
+<p>This is hairy, pathological expression. However, the minimal DFA that corresponds this has only 26 states. I generated one graph of this DFA via --dump_dfa option (also this expression is contained in the repository: test/<a href="http://github.com/sinya8282/RANS/blob/master/test/http-url.regex">http-url.regex</a>).</p>
 <pre><code class="prettyprint lang-sh"> $ rans -f test/http-url.regex --dump_dfa | dot -Tpng -o http-url.png </code></pre>
 <p>as shown below. <img src="images/http-url.png"></p>
 <p>
@@ -172,7 +172,7 @@ So what do you use it for? dispose of the matter at YOUR discretion ;-)</p>
 <p>No, I don't think so (at least for now).</br>
 Because the larger the number becomes, the more operation and space will be needed in multiprecision integer multiplication (RANS uses GMP C++ class interface).</br></br>
 
-Suppose a each multiplication performes in constant time, val() runs in time O(n*|D|^2) and rep() runs in time O(n log n * |D|^3) where n is a length of a source text and |D| denotes a size of a DFA.
+Suppose a each multiplication performes in constant time, val() runs in time O(n*|D|^2) and rep() runs in time O(n log n * |D|^3) where n is the length of the source text and |D| denotes the size of the DFA.
 </p>
 
 <h3>Do you become interested in RANS?</br>and how it works internally?</h3>

@@ -93,7 +93,7 @@ enum Encoding {
 
 std::size_t utf8_byte_length(const unsigned char c)
 {
-  static const std::size_t len[] = {
+  static const std::size_t len[256] = {
     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
@@ -1413,7 +1413,7 @@ RANS::Value& RANS::val(const std::string& text, Value& value) const
 // This implementation runs in time roughly O(n log n |D|^3) where n is the length
 // of text and |D| is the size of(number of states of) DFA.
 //
-// Behaiviro is UNSPECIFIED when there exists no text s.t. val(text) == value.
+// This will Throw exception when there exists no text s.t. val(text) == value.
 // Therefore caller should assure that there exists a correspoding text when
 // calling this function. but don't worry, this condition is always true if caller
 // got the value via val() just like: "value = val(text)"
@@ -1450,7 +1450,7 @@ std::string& RANS::rep(const Value& value, std::string& text) const
       int next = _dfa[state][c];
       if (next == DFA::REJECT) continue;
 
-      val_ = val; // save before value
+      val_ = val;
       for (std::size_t i = 0; i < size(); i++) {
         if (_dfa.accept(i)) val += tmpM(next, i);
       }

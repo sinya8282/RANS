@@ -1426,11 +1426,9 @@ std::string& RANS::rep(const Value& value, std::string& text) const
   int state = DFA::START;
   Value value_ = value, val, val_;
   text = "";
-  int len = floor(value_);
 
-  for (; len > 0; len--) {
+  for (int len = floor(value_); len > 0; len--, val = val_ = 0) {
     if (len == 1) {
-      std::size_t val = 0;
       for (std::size_t c = 0; c < 256; c++) {
         int next = _dfa[state][c];
         if (_dfa.accept(next) && ++val > value_) {
@@ -1438,28 +1436,25 @@ std::string& RANS::rep(const Value& value, std::string& text) const
           break;
         }
       }
+    } else {
+      V.clear();
+      power(_adjacency_matrix, len - 1, tmpM);
 
-      break;
-    }
-    
-    val = val_ = 0;
-    V.clear();
-    power(_adjacency_matrix, len - 1, tmpM);
+      for (std::size_t c = 0; c < 256; c++) {
+        int next = _dfa[state][c];
+        if (next == DFA::REJECT) continue;
 
-    for (std::size_t c = 0; c < 256; c++) {
-      int next = _dfa[state][c];
-      if (next == DFA::REJECT) continue;
+        val_ = val;
+        for (std::size_t i = 0; i < size(); i++) {
+          if (_dfa.accept(i)) val += tmpM(next, i);
+        }
 
-      val_ = val;
-      for (std::size_t i = 0; i < size(); i++) {
-        if (_dfa.accept(i)) val += tmpM(next, i);
-      }
-
-      if (val > value_) {
-        text.append(1, c);
-        state = next;
-        value_ -= val_;
-        break;
+        if (val > value_) {
+          text.append(1, c);
+          state = next;
+          value_ -= val_;
+          break;
+        }
       }
     }
   }

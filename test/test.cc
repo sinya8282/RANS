@@ -23,14 +23,13 @@ TEST(ELEMENTAL_TEST, DFA_MINIMIZE) {
   }
 }
 
-struct testcase {
-  testcase(std::string regex_, std::string text_, bool result_): regex(regex_), text(text_), result(result_) {}
-  std::string regex;
-  std::string text;
-  bool result;
-};
-
 TEST(ELEMENTAL_TEST, DFA_ACCEPT) {
+  struct testcase {
+    testcase(std::string regex_, std::string text_, bool result_): regex(regex_), text(text_), result(result_) {}
+    std::string regex;
+    std::string text;
+    bool result;
+  };
   testcase accept_test[] = {
     testcase("abc", "abc", true),
     testcase("abc", "xbc", false),
@@ -130,15 +129,70 @@ TEST(ELEMENTAL_TEST, DFA_ACCEPT) {
   };
   const std::size_t num_of_test = sizeof(accept_test) / sizeof(testcase);
   for (std::size_t i = 0; i < num_of_test; i++) {
+    testcase &t = accept_test[i];
     try {
-      rans::DFA d(accept_test[i].regex);
-      ASSERT_EQ(accept_test[i].result, d.accept(accept_test[i].text))
-          << "regex: " << accept_test[i].regex << ", text: " << accept_test[i].text;
+      rans::DFA d(t.regex);
+      ASSERT_EQ(t.result, d.accept(t.text))
+          << "regex: " << t.regex << ", text: " << t.text;
     } catch(const char* msg) {
-      std::cout << "regex: " << accept_test[i].regex
-                << ", text: " << accept_test[i].text
+      std::cout << "regex: " << t.regex
+                << ", text: " << t.text
                 << std::endl << msg << std::endl;
     }
+  }
+}
+
+TEST(COUNTING_TEST, RANS_COUNT_AND_AMOUNT) {
+  struct testcase {
+    testcase(std::string regex_, int amount_, int count_ = 0, std::size_t length_ = 0):
+        regex(regex_), amount(amount_), count(count_), length(length_) {}
+    std::string regex;
+    int amount;
+    int count;
+    std::size_t length;
+  };
+
+  testcase total_amount_test[] = {
+    testcase("a*b*|b*c*", -1),
+    testcase("a?", 2),
+    testcase("[12345]", 5),
+    testcase("[^12345]", 256-5),
+    testcase("...", 256*256*256),
+    testcase("", 1),
+    testcase("there exist just one string!", 1),
+    testcase("or infinite strings!*", -1),
+    testcase("[ab][cde][efgh][ijklm][opqrst][uvwxyz]", 2*3*4*5*6*6)
+  };
+  const std::size_t num_of_test = sizeof(total_amount_test) / sizeof(testcase);
+
+  for (std::size_t i = 0; i < num_of_test; i++) {
+    testcase& t = total_amount_test[i];
+    RANS r(t.regex);
+    ASSERT_EQ(t.amount, r.amount()) << "regex: " << t.regex;
+  }
+
+
+  testcase amount_and_count_test[] = {
+    testcase("a*b*|b*c*", 4, 3, 1),
+    testcase("a?", 2, 1, 1),
+    testcase("a?", 1, 1, 0),
+    testcase("", 1, 0, 100),
+    testcase("there exist just one string!", 0, 0, 27),
+    testcase("there exist just one string!", 1, 1, 28),
+    testcase("there exist just one string!", 1, 0, 29),
+    testcase("a*(b*|c*)", 1, 1, 0),
+    testcase("a*(b*|c*)", 1+3, 3, 1),
+    testcase("a*(b*|c*)", 1+3+5, 5, 2),
+  };
+  const std::size_t num_of_test_ = sizeof(amount_and_count_test) / sizeof(testcase);
+
+  for (std::size_t i = 0; i < num_of_test_; i++) {
+    testcase& t = amount_and_count_test[i];
+    RANS r(t.regex);
+    ASSERT_EQ(t.amount, r.amount(t.length))
+        << "regex: " << t.regex << ", length = " << t.length;
+    ASSERT_EQ(t.count, r.count(t.length))
+        << "regex: " << t.regex << ", length = " << t.length;
   }
 }
 
@@ -228,4 +282,8 @@ TEST(HTTP_URL_TEST, RANS_VAL) {
 TEST(HTTP_URL_TEST, RANS_REP) {
   ASSERT_EQ(homepage_url, base_http(homepage_val));
   ASSERT_EQ(googol_url, base_http(googol));
+}
+
+TEST(HTTP_URL_TEST, RANS_FINITE) {
+  ASSERT_TRUE(base_http.infinite());
 }

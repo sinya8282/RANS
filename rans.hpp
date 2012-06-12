@@ -1306,8 +1306,13 @@ class RANS {
   Value val(const std::string& text) const { Value value; return val(text, value); }
   std::string& rep(const Value&, std::string &) const;
   std::string rep(const Value& value) const { std::string text; return rep(value, text); }
-  std::size_t size() const { return _dfa.size(); }
   const DFA& dfa() const { return _dfa; }
+  std::size_t size() const { return _dfa.size(); }
+  Value amount() const;
+  bool finite() const { return amount() != -1; }
+  bool infinite() const { return !finite(); }
+  Value amount(std::size_t length) const { return count(length, true); }
+  Value count(std::size_t length) const { return count(length, false); }
   // useful aliases for val & rep
   Value& operator()(const std::string& text, Value& value) const { return val(text, value); }
   Value operator()(const std::string& text) const { return val(text); }
@@ -1323,10 +1328,12 @@ class RANS {
   RANS(const RANS&);
   void operator=(const RANS&);
   int floor(Value&) const;
+  Value count(std::size_t length, bool amount) const;
   // fields
   bool _ok;
   std::string _error;
   DFA _dfa;
+  const int _match_epsilon;
   MPMatrix _adjacency_matrix;
   MPMatrix _extended_adjacency_matrix;
   const int _extended_state;
@@ -1334,7 +1341,10 @@ class RANS {
   MPVector _accept_vector;
 };
 
-RANS::RANS(const std::string &regex, Encoding enc = ASCII): _ok(true), _dfa(regex, rans::Encoding(enc)), _extended_state(_dfa.size())
+RANS::RANS(const std::string &regex, Encoding enc = ASCII):
+    _ok(true), _dfa(regex, rans::Encoding(enc)),
+    _match_epsilon(_dfa.accept(DFA::START) ? 1 : 0),
+    _extended_state(_dfa.size())
 {
   if (!_dfa.ok()) {
     _ok = false;
@@ -1464,14 +1474,13 @@ std::string& RANS::rep(const Value& value, std::string& text) const
 
 int RANS::floor(Value& value) const
 {
-  const int match_epsilon = _dfa.accept(DFA::START) ? 1 : 0;
-  if (value < match_epsilon) return 0;
+  if (value < _match_epsilon) return 0;
 
   MPMatrix tmpM(size()+1, size()+1), tmpM_(size()+1, size()+1);
   tmpM = _extended_adjacency_matrix;
 
-  if (tmpM(DFA::START, _extended_state) + match_epsilon > value) {
-    value -= match_epsilon;
+  if (tmpM(DFA::START, _extended_state) + _match_epsilon > value) {
+    value -= _match_epsilon;
     return 1;
   }
   
@@ -1486,7 +1495,7 @@ int RANS::floor(Value& value) const
       throw Exception("invalid value: correspoinding text does not exists.");
     }
     length *= 2;
-  } while (tmpM(DFA::START, _extended_state) + match_epsilon <= value);
+  } while (tmpM(DFA::START, _extended_state) + _match_epsilon <= value);
 
   // linear search
   tmpM = tmpM_; length /= 2;
@@ -1494,10 +1503,54 @@ int RANS::floor(Value& value) const
     tmpM_ = tmpM;
     prod(tmpM, _extended_adjacency_matrix);
     length++;
-  } while (tmpM(DFA::START, _extended_state) + match_epsilon <= value);
+  } while (tmpM(DFA::START, _extended_state) + _match_epsilon <= value);
 
-  value -= tmpM_(DFA::START, _extended_state) + match_epsilon;
+  value -= tmpM_(DFA::START, _extended_state) + _match_epsilon;
   return length;
+}
+
+// Return the number of all acceptable strings.
+// if it's infinite, then return -1;
+Value RANS::amount() const
+{
+  MPMatrix tmpM(size()+1, size()+1);
+  tmpM = _extended_adjacency_matrix;
+
+  std::size_t length = 1;
+  Value amount_ = _match_epsilon;
+
+  do {
+    amount_ = tmpM(DFA::START, _extended_state);
+    prod(tmpM, tmpM);
+    length *= 2;
+  } while (length < 2 * size());
+
+  if (amount_ != tmpM(DFA::START, _extended_state)) {
+    return -1; // there exists infinite acceptable strings.
+  } else {
+    return amount_ + _match_epsilon;
+  }
+}
+
+// Return the number of all acceptable strings of
+// (less than, if amount is true) 'length' characters in length.
+Value RANS::count(std::size_t length, bool amount) const
+{
+  const std::size_t size_ = amount ? size()+1 : size();
+  int accept_state =  _extended_state;
+  MPMatrix tmpM(size_, size_);
+
+  power(amount ? _extended_adjacency_matrix : _adjacency_matrix, length, tmpM);
+
+  if (amount) {
+    return tmpM(DFA::START, _extended_state) + _match_epsilon;
+  } else {
+    Value count_;
+    for (std::size_t i = 0; i < size(); i++) {
+      if (_dfa.accept(i)) count_ += tmpM(DFA::START, i);
+    }
+    return count_;
+  }
 }
 
 const RANS RANS::baseBYTE(".*");

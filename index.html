@@ -61,21 +61,26 @@ If you wants to use RANS as a C++ library, check this page <a href="api.html">RA
 In this page, I just explain how to use RANS's command line tool 'rans'.</br>
 Firstly, you should checkout source code, and build it. (Depends on: gflags, gtest, gmp)
 </p>
-<pre><code class="prettyprint lang-sh">$ git clone "http://sinya8282@github.com/sinya8282/RANS.git"
-$ cd RANS
-$ make check    # can be skipped
-$ make install  # install header file (rans.hpp) & RANS cui (rans)
-$ # rehash
-$ rans
+<pre><code class="prettyprint lang-sh">% git clone "http://sinya8282@github.com/sinya8282/RANS.git"
+% cd RANS
+% make check    # can be skipped
+% make install  # install header file (rans.hpp) & RANS cui (rans)
+% # rehash
+% rans
 RANS command line tool.
 Usage: rans REGEX [Flags ...]
 You can check RANS extended regular expression syntax via '--syntax' option.
 </code></pre>
 
+<p>You can also install via Homebrew if you using Mac OS X:</p>
+<pre><code class="prettyprint lang-sh">% brew tap sinya8282/rans
+% brew install rans
+</code></pre>
+
 <p>Now, you can try 'rans'.</p>
-<pre><code class="prettyprint lang-sh">$ rans "a*(c*|b*)" --text aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+<pre><code class="prettyprint lang-sh">% rans "a*(c*|b*)" --text aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 1936
-$ rans "a*(c*|b*)" --value 2382
+% rans "a*(c*|b*)" --value 2382
 aaaaaaaaaccccccccccccccccccccccccccccccccccccccc
 </code></pre>
 
@@ -106,14 +111,14 @@ RANS "simplified" extended regular expression syntax:
 I often see this question in web, 「How to convert Hexadecimal and Octal to Binary?」. RANS provides general solution of this problem(Base-conversion, moregeneraly). It's simple, caliculates the val() of given text on base-k language, and then caliculates the rep() of before val() on base-l languge.</br></br>
 
 Example:
-<pre><code class="prettyprint lang-sh">$ # first, convert decimal representation to octal representation
-$ rans '0|[1-7][0-7]*' --text 31723501261722172350012617220172317235012617221501261722172350126172217235012617221
+<pre><code class="prettyprint lang-sh">% # first, convert decimal representation to octal representation
+% rans '0|[1-7][0-7]*' --text 31723501261722172350012617220172317235012617221501261722172350126172217235012617221
 366279202153417409243738390844334144022596873428737191758601997964469280401
-$ # ok. next, convert this value to hexadecimal representation
-$ rans '0|[1-9A-F][0-9A-F]*' --value 366279202153417409243738390844334144022596873428737191758601997964469280401
+% # ok. next, convert this value to hexadecimal representation
+% rans '0|[1-9A-F][0-9A-F]*' --value 366279202153417409243738390844334144022596873428737191758601997964469280401
 CF4E82B1E91E9D00AC7A40F4CF4E82B1E91A0AC7A47A74158F48F4E82B1E91
-$ # You can do that more directly using --convert_from and --convert_to options.
-$ rans --convert_from '0|[1-7][0-7]*' --convert_to '0|[1-9A-F][0-9A-F]' --text 31723501261722172350012617220172317235012617221501261722172350126172217235012617221
+% # You can do that more directly using --convert_from and --convert_to options.
+% rans --convert_from '0|[1-7][0-7]*' --convert_to '0|[1-9A-F][0-9A-F]' --text 31723501261722172350012617220172317235012617221501261722172350126172217235012617221
 CF4E82B1E91E9D00AC7A40F4CF4E82B1E91A0AC7A47A74158F48F4E82B1E91
 </code></pre>
 </br>
@@ -136,29 +141,29 @@ such as:
 (my handwritten, might be wrong :-p)
 
 <p>This is hairy, pathological expression. However, the minimal DFA that corresponds this has only 26 states. I generated one graph of this DFA via --dump_dfa option (also this expression is contained in the repository: test/<a href="http://github.com/sinya8282/RANS/blob/master/test/http-url.regex">http-url.regex</a>).</p>
-<pre><code class="prettyprint lang-sh"> $ rans -f test/http-url.regex --dump_dfa | dot -Tpng -o http-url.png </code></pre>
+<pre><code class="prettyprint lang-sh"> % rans -f test/http-url.regex --dump_dfa | dot -Tpng -o http-url.png </code></pre>
 <p>as shown below. <img src="images/http-url.png"></p>
 <p>
 
 <p>Good. http-url is definable by a regular expression, recognizable by a DFA, and moreover - numberble by RANS.</br>
 Let's try to get the number of this page's http-url: <a href="http://sinya8282.github.com/RANS/">http://sinya8282.github.com/RANS/</a>
 </p>
-<pre><code class="prettyprint lang-sh">$ rans -f test/http-url.regex --text "http://sinya8282.github.com/RANS/"
+<pre><code class="prettyprint lang-sh">% rans -f test/http-url.regex --text "http://sinya8282.github.com/RANS/"
 1462290815058406142878645747899975197440717007135
-$ rans -f test/http-url.regex --value 1462290815058406142878645747899975197440717007135
+% rans -f test/http-url.regex --value 1462290815058406142878645747899975197440717007135
 http://sinya8282.github.com/RANS/
-$ # Do you remember seeing that number somewhere before ? ;-)
+% # Do you remember seeing that number somewhere before ? ;-)
 </code></pre>
 
 <p>and data size of this url and number is 33 and 20 (Bytes). You can make sure it by --compress/--decompress option.</p>
-<pre><code class="prettyprint lang-sh">$ echo -n "http://sinya8282.github.com/RANS/" > url
-$ rans -f test/http-url.regex --compress url 
-$ ls -lh url url.rans   # compressed file is created with '.rans' extension
+<pre><code class="prettyprint lang-sh">% echo -n "http://sinya8282.github.com/RANS/" > url
+% rans -f test/http-url.regex --compress url 
+% ls -lh url url.rans   # compressed file is created with '.rans' extension
 -rw-r--r--  1 sinya  staff  33 May 15 21:34 url
 -rw-r--r--  1 sinya  staff  20 May 15 21:34 url.rans
-$ rm url
-$ rans -f test/http-url.regex --decompress url.rans
-$ cat url
+% rm url
+% rans -f test/http-url.regex --decompress url.rans
+% cat url
 http://sinya8282.github.com/RANS/
 </code></pre>
 

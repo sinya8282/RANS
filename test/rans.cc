@@ -19,6 +19,8 @@ DEFINE_string(decompress, "", "decompress the given file");
 DEFINE_string(out, "", "output file name.");
 DEFINE_bool(size, false, "print the size of the DFA.");
 DEFINE_bool(repl, false, "start REPL.");
+DEFINE_bool(amount, false, "print number of acceptable strings that has less than '--value' characters in length.");
+DEFINE_int64(count, -1, "print number of acceptable strings that just has specified characters in length.");
 
 void dispatch(const RANS&);
 void set_filename(const std::string&, std::string&);
@@ -83,7 +85,19 @@ int main(int argc, char* argv[])
 }
 
 void dispatch(const RANS& r) {
-  if (!FLAGS_quick_check.empty()) {
+  if (FLAGS_amount) {
+    if (FLAGS_count < 0) {
+      if (r.finite()) {
+        std::cout << r.amount() << std::endl;
+      } else {
+        std::cout << "there exists infinite acceptable strings." << std::endl;
+      }
+    } else {
+      std::cout << r.amount(FLAGS_count) << std::endl;
+    }
+  } else if (FLAGS_count >= 0) {
+    std::cout << r.count(FLAGS_count) << std::endl;
+  } else if (!FLAGS_quick_check.empty()) {
     if (r.dfa().accept(FLAGS_quick_check)) {
       std::cout << "text is acceptable." << std::endl;
     } else {

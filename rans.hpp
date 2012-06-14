@@ -1432,13 +1432,11 @@ std::string& RANS::rep(const Value& value, std::string& text) const
   if (value < 0) throw Exception("invalid value: correspoinding text does not exists.");
   
   MPMatrix tmpM(size(), size());
-  MPVector V(size()), tmpV(size());
   int state = DFA::START;
   Value value_ = value, val, val_;
   text = "";
 
   for (int len = floor(value_); len > 0; len--, val = val_ = 0) {
-    V.clear();
     power(_adjacency_matrix, len - 1, tmpM);
 
     for (std::size_t c = 0; c < 256; c++) {

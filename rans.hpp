@@ -1438,33 +1438,23 @@ std::string& RANS::rep(const Value& value, std::string& text) const
   text = "";
 
   for (int len = floor(value_); len > 0; len--, val = val_ = 0) {
-    if (len == 1) {
-      for (std::size_t c = 0; c < 256; c++) {
-        int next = _dfa[state][c];
-        if (_dfa.accept(next) && ++val > value_) {
-          text.append(1, c); // complete, text == rep(value).
-          break;
-        }
+    V.clear();
+    power(_adjacency_matrix, len - 1, tmpM);
+
+    for (std::size_t c = 0; c < 256; c++) {
+      int next = _dfa[state][c];
+      if (next == DFA::REJECT) continue;
+      
+      val_ = val;
+      for (std::size_t i = 0; i < size(); i++) {
+        if (_dfa.accept(i)) val += tmpM(next, i);
       }
-    } else {
-      V.clear();
-      power(_adjacency_matrix, len - 1, tmpM);
-
-      for (std::size_t c = 0; c < 256; c++) {
-        int next = _dfa[state][c];
-        if (next == DFA::REJECT) continue;
-
-        val_ = val;
-        for (std::size_t i = 0; i < size(); i++) {
-          if (_dfa.accept(i)) val += tmpM(next, i);
-        }
-
-        if (val > value_) {
-          text.append(1, c);
-          state = next;
-          value_ -= val_;
-          break;
-        }
+      
+      if (val > value_) {
+        text.append(1, c);
+        state = next;
+        value_ -= val_;
+        break;
       }
     }
   }

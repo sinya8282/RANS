@@ -34,12 +34,12 @@
     <div id="main_content_wrap" class="outer">
       <section id="main_content" class="inner">
 		<pre><code class="prettyprint lang-sh">1462290815058406142878645747899975197440717007135</code></pre>
-		<p>Can you guess what this number means? I assure you that it will be clear, if you read this page throug!　<span style="float: right;">--<a href="http://swatmac.info/?p=942">日本語解説 at sw@mac.info</a></span></p>
+		<p>Can you guess what this number means? I assure you that it will be clear, if you read this page through!　<span style="float: right;">--<a href="http://swatmac.info/?p=942">日本語解説 at sw@mac.info</a></span></p>
 
         <h3>Introduction</h3>
 
 <p>RANS is a library, implementation of Abstract Numeration System (ANS) on a regular language.</br>
-RANS's concept is very simple, just caliculates the number from given string on a regular language. In other words,
+RANS's concept is very simple, just calculates the number from given string on a regular language. In other words,
 <ul>
   <li>RANS provides a minimal perfect hash function that maps string to positive integer.</li>
   <li>RANS provides the 'val' that is a bijective function from N onto a language.</li>
@@ -108,13 +108,13 @@ RANS "simplified" extended regular expression syntax:
 
 <h3>Use RANS as a Text Converter</h3>
 
-I often see this question in web, 「How to convert Hexadecimal and Octal to Binary?」. RANS provides general solution of this problem(Base-conversion, moregeneraly). It's simple, caliculates the val() of given text on base-k language, and then caliculates the rep() of before val() on base-l languge.</br></br>
+I often see this question in web, 「How to convert Hexadecimal and Octal to Binary?」. RANS provides general solution of this problem(Base-conversion, moregeneraly). It's simple, calculates the val() of given text on base-k language, and then calculates the rep() of before val() on base-l language.</br></br>
 
 Example:
 <pre><code class="prettyprint lang-sh">% # first, convert decimal representation to octal representation
 % rans '0|[1-7][0-7]*' --text 31723501261722172350012617220172317235012617221501261722172350126172217235012617221
 366279202153417409243738390844334144022596873428737191758601997964469280401
-% # ok. next, convert this value to hexadecimal representation
+% # OK. next, convert this value to hexadecimal representation
 % rans '0|[1-9A-F][0-9A-F]*' --value 366279202153417409243738390844334144022596873428737191758601997964469280401
 CF4E82B1E91E9D00AC7A40F4CF4E82B1E91A0AC7A47A74158F48F4E82B1E91
 % # You can do that more directly using --convert_from and --convert_to options.
@@ -145,7 +145,7 @@ such as:
 <p>as shown below. <img src="images/http-url.png"></p>
 <p>
 
-<p>Good. http-url is definable by a regular expression, recognizable by a DFA, and moreover - numberble by RANS.</br>
+<p>Good. http-url is definable by a regular expression, recognizable by a DFA, and moreover - numerable by RANS.</br>
 Let's try to get the number of this page's http-url: <a href="http://sinya8282.github.com/RANS/">http://sinya8282.github.com/RANS/</a>
 </p>
 <pre><code class="prettyprint lang-sh">% rans -f test/http-url.regex --text "http://sinya8282.github.com/RANS/"
@@ -177,7 +177,7 @@ So what do you use it for? dispose of the matter at YOUR discretion ;-)</p>
 <p>No, I don't think so (at least for now).</br>
 Because the larger the number becomes, the more operation and space will be needed in multiprecision integer multiplication (RANS uses GMP C++ class interface).</br></br>
 
-Suppose a each multiplication performes in constant time, val() runs in time O(n*|D|^2) and rep() runs in time O(n log n * |D|^3) where n is the length of the source text and |D| denotes the size of the DFA.
+Suppose a each multiplication performs in constant time, val() runs in time O(n*|D|^2) and rep() runs in time O(n log n * |D|^3) where n is the length of the source text and |D| denotes the size of the DFA.
 </p>
 
 <h3>Do you become interested in RANS?</br>and how it works internally?</h3>
@@ -188,7 +188,7 @@ Also if you interested in ANS, more mathematical aspects, see Berthé and Rigo's
 <h3>Author</h3>
 <p>Ryoma Sin'ya (<a href="http://twitter.com/sinya8282">@sinya8282</a>)</p>
 <p>Feature suggestions and bug reports are always welcome via <a href="http://github.com/sinya8282/RANS/issues">GitHub issues</a> or <a href="http://twitter.com/sinya8282">Twitter</a>.</p>
-<h3>Acknowledgement</h3>
+<h3>Acknowledgment</h3>
 <ul>
   <li>Special thanks to Michel Rigo who is one of the originators of ANS, and gave me helpful comments.</li>
 </ul>

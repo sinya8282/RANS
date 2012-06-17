@@ -1401,14 +1401,10 @@ RANS::Value& RANS::val(const std::string& text, Value& value) const
       if (next != DFA::REJECT) paths[next]++;
     }
     state = _dfa[state][static_cast<unsigned char>(text[i])];
-    if (i < text.length() - 1) {
-      prod(paths, _adjacency_matrix);
-    }
+    if (i < text.length() - 1) prod(paths, _adjacency_matrix);
   }
 
-  if (state == DFA::REJECT || !_dfa.accept(state)) {
-    throw Exception("invalid text: text is not acceptable.");
-  }
+  if (!_dfa.accept(state)) throw Exception("invalid text: text is not acceptable.");
 
   inner_prod(paths, _accept_vector, value);
   

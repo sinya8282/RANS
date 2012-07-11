@@ -62,10 +62,12 @@
 DEFINE_bool(dump_expr, false, "dump Expr-tree.");
 DEFINE_bool(dump_dfa, false, "dump DFA as dot language.");
 DEFINE_bool(dump_matrix, false, "dump Matrix.");
+DEFINE_bool(dump_exmatrix, false, "dump Extended Matrix.");
 #else
 #define FLAGS_dump_expr false
 #define FLAGS_dump_dfa false
 #define FLAGS_dump_matrix false
+#define FLAGS_dump_exmatrix false
 #endif
 
 namespace rans {
@@ -1375,6 +1377,7 @@ RANS::RANS(const std::string &regex, Encoding enc = ASCII):
 
   if (FLAGS_dump_dfa) std::cout << _dfa << std::endl;
   if (FLAGS_dump_matrix) std::cout << _adjacency_matrix << std::endl;
+  if (FLAGS_dump_exmatrix) std::cout << _extended_adjacency_matrix << std::endl;
 }
 
 // val(), which caliculates the value corresponds given text, is fundamental function of ANS.

@@ -54,6 +54,7 @@
 #include <map>
 #include <algorithm>
 #include <exception>
+#include <math.h>
 
 // External libraries: gmp(gmpxx), (optional: gflags, Boost.uBLAS)
 #include <gmpxx.h>
@@ -1315,6 +1316,7 @@ class RANS {
   bool infinite() const { return !finite(); }
   Value amount(std::size_t length) const { return count(length, true); }
   Value count(std::size_t length) const { return count(length, false); }
+  double frobenius_root() const;
   // useful aliases for val & rep
   Value& operator()(const std::string& text, Value& value) const { return val(text, value); }
   Value operator()(const std::string& text) const { return val(text); }
@@ -1324,6 +1326,7 @@ class RANS {
   std::string decompress(const std::string& text) const { std::string dst; return decompress(text, dst); }
   std::string& compress(const std::string&, std::string&) const;
   std::string& decompress(const std::string&, std::string&) const;
+  double compression_ratio() const;
   static const RANS baseBYTE;
  private:
   //DISALLOW COPY AND ASSIGN
@@ -1540,6 +1543,34 @@ Value RANS::count(std::size_t length, bool amount) const
   }
 }
 
+// calculate maximum eigenvalue (frovenius root) using simple power method.
+double RANS::frobenius_root() const
+{
+  MPVector start_vector(size()), prev_vector(size());
+  // (255/256)^10000 = 1.0049656577513434e-17, good precision
+  const std::size_t iteration = 10000;
+
+  for (std::size_t i = 0; i < size(); i++) {
+    start_vector[i] = 1;
+  }
+  for (std::size_t i = 0; i < iteration; i++) {
+    prod(start_vector, _adjacency_matrix);
+  }
+  for (std::size_t i = 0; i < size(); i++) {
+    prev_vector[i] = start_vector[i];
+  }
+  prod(start_vector, _adjacency_matrix);
+  
+  Value value, prev_value;
+  inner_prod(start_vector, start_vector, value);
+  inner_prod(start_vector, prev_vector, prev_value);
+
+  mpf_class root = value;
+  root /= prev_value;
+  
+  return root.get_d();
+}
+
 const RANS RANS::baseBYTE(".*");
 
 std::string& RANS::compress(const std::string& text, std::string& dst) const
@@ -1552,6 +1583,11 @@ std::string& RANS::decompress(const std::string& text, std::string& dst) const
 {
   Value value;
   return rep(baseBYTE(text, value), dst);
+}
+
+double RANS::compression_ratio() const
+{
+  return log(frobenius_root()) / log(baseBYTE.frobenius_root());
 }
 
 } // namespace rans

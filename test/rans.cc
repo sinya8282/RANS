@@ -21,6 +21,7 @@ DEFINE_bool(size, false, "print the size of the DFA.");
 DEFINE_bool(repl, false, "start REPL.");
 DEFINE_bool(amount, false, "print number of acceptable strings that has less than '--value' characters in length.");
 DEFINE_int64(count, -1, "print number of acceptable strings that just has specified characters in length.");
+DEFINE_bool(compression_ratio, false, "print asymptotic compression ratio [%].");
 
 void dispatch(const RANS&);
 void set_filename(const std::string&, std::string&);
@@ -103,6 +104,8 @@ void dispatch(const RANS& r) {
     } else {
       std::cout << "text is not acceptable." << std::endl;
     }
+  } else if (FLAGS_compression_ratio) {
+    std::cout << r.compression_ratio() << std::endl;
   } else if (!FLAGS_compress.empty()) {
     std::string text;
     std::ifstream ifs(FLAGS_compress.data(), std::ios::in | std::ios::binary);

@@ -1527,7 +1527,6 @@ Value RANS::amount() const
 Value RANS::count(std::size_t length, bool amount) const
 {
   const std::size_t size_ = amount ? size()+1 : size();
-  int accept_state =  _extended_state;
   MPMatrix tmpM(size_, size_);
 
   power(amount ? _extended_adjacency_matrix : _adjacency_matrix, length, tmpM);

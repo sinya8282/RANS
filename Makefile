@@ -7,7 +7,7 @@ CXXFLAGS=-O0 -g3 -Wall -DRANS_DEBUG
 else
 CXXFLAGS=-O3
 endif
-RANS_CXXFLAGS=-I${shell pwd} -DRANS_USE_$(MATRIX_LIB) -lgmp -lgmpxx
+RANS_CXXFLAGS=-I${shell pwd} -DRANS_USE_$(MATRIX_LIB) -lgmp -lgmpxx -lmpfr
 
 prefix=/usr/local
 exec_prefix=$(prefix)

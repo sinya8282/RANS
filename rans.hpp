@@ -1326,13 +1326,14 @@ class RANS {
   std::string decompress(const std::string& text) const { std::string dst; return decompress(text, dst); }
   std::string& compress(const std::string&, std::string&) const;
   std::string& decompress(const std::string&, std::string&) const;
-  double compression_ratio() const;
+  double compression_ratio(int count) const;
+  double compression_ratio(const std::string& text) const;
   static const RANS baseBYTE;
  private:
   //DISALLOW COPY AND ASSIGN
   RANS(const RANS&);
   void operator=(const RANS&);
-  int floor(Value&) const;
+  std::size_t length_of(const Value&) const;
   Value count(std::size_t length, bool amount) const;
   // fields
   bool _ok;
@@ -1362,7 +1363,7 @@ RANS::RANS(const std::string &regex, Encoding enc = ASCII):
   _start_vector.resize(size());
   _start_vector[DFA::START] = 1;
   _accept_vector.resize(size());
-  
+
   for (std::size_t i = 0; i < size(); i++) {
     if (_dfa.accept(i)) _accept_vector[i] = 1;
 
@@ -1436,10 +1437,13 @@ std::string& RANS::rep(const Value& value, std::string& text) const
   MPMatrix tmpM(size(), size());
   int state = DFA::START;
   Value value_ = value, val, val_;
+  std::size_t length = length_of(value_);
+  if (length > 0) value_ -= count(length - 1, true);
   text = "";
 
-  for (int len = floor(value_); len > 0; len--, val = val_ = 0) {
-    power(_adjacency_matrix, len - 1, tmpM);
+  while (length-- != 0) {
+    val = val_ = 0;
+    power(_adjacency_matrix, length, tmpM);
 
     for (std::size_t c = 0; c < 256; c++) {
       int next = _dfa[state][c];
@@ -1462,7 +1466,7 @@ std::string& RANS::rep(const Value& value, std::string& text) const
   return text;
 }
 
-int RANS::floor(Value& value) const
+std::size_t RANS::length_of(const Value& value) const
 {
   if (value < _match_epsilon) return 0;
 
@@ -1470,7 +1474,6 @@ int RANS::floor(Value& value) const
   tmpM = _extended_adjacency_matrix;
 
   if (tmpM(DFA::START, _extended_state) + _match_epsilon > value) {
-    value -= _match_epsilon;
     return 1;
   }
   
@@ -1495,7 +1498,6 @@ int RANS::floor(Value& value) const
     length++;
   } while (tmpM(DFA::START, _extended_state) + _match_epsilon <= value);
 
-  value -= tmpM_(DFA::START, _extended_state) + _match_epsilon;
   return length;
 }
 
@@ -1584,9 +1586,19 @@ std::string& RANS::decompress(const std::string& text, std::string& dst) const
   return rep(baseBYTE(text, value), dst);
 }
 
-double RANS::compression_ratio() const
+double RANS::compression_ratio(int count_ = -1) const
 {
-  return log(frobenius_root()) / log(baseBYTE.frobenius_root());
+  if (count_ < 0) {
+    // return asymptotic ratio.
+    return log(frobenius_root()) / log(baseBYTE.frobenius_root());
+  } else {
+    return static_cast<double>(baseBYTE.rep(count(count_, true) - 1).length()) / count_;
+  }
+}
+
+double RANS::compression_ratio(const std::string& text) const
+{
+  return static_cast<double>(baseBYTE.length_of(val(text))) / text.length();
 }
 
 } // namespace rans

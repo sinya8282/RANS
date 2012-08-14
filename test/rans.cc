@@ -22,6 +22,7 @@ DEFINE_bool(repl, false, "start REPL.");
 DEFINE_bool(amount, false, "print number of acceptable strings that has less than '--value' characters in length.");
 DEFINE_int64(count, -1, "print number of acceptable strings that just has specified characters in length.");
 DEFINE_bool(compression_ratio, false, "print asymptotic compression ratio [%].");
+DEFINE_bool(frobenius_root, false, "print frobenius root of adjacency matrix.");
 
 void dispatch(const RANS&);
 void set_filename(const std::string&, std::string&);
@@ -86,7 +87,11 @@ int main(int argc, char* argv[])
 }
 
 void dispatch(const RANS& r) {
-  if (FLAGS_amount) {
+  if (FLAGS_frobenius_root) {
+    std::cout << r.frobenius_root() << std::endl;
+  } else if (FLAGS_compression_ratio) {
+    std::cout << r.compression_ratio(FLAGS_count) << std::endl;
+  } else if (FLAGS_amount) {
     if (FLAGS_count < 0) {
       if (r.finite()) {
         std::cout << r.amount() << std::endl;
@@ -104,8 +109,6 @@ void dispatch(const RANS& r) {
     } else {
       std::cout << "text is not acceptable." << std::endl;
     }
-  } else if (FLAGS_compression_ratio) {
-    std::cout << r.compression_ratio() << std::endl;
   } else if (!FLAGS_compress.empty()) {
     std::string text;
     std::ifstream ifs(FLAGS_compress.data(), std::ios::in | std::ios::binary);

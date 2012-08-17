@@ -1326,8 +1326,8 @@ class RANS {
   std::string decompress(const std::string& text) const { std::string dst; return decompress(text, dst); }
   std::string& compress(const std::string&, std::string&) const;
   std::string& decompress(const std::string&, std::string&) const;
-  double compression_ratio(int count) const;
-  double compression_ratio(const std::string& text) const;
+  double compression_ratio(int count, const RANS&) const;
+  double compression_ratio(const std::string& text, const RANS&) const;
   static const RANS baseBYTE;
  private:
   //DISALLOW COPY AND ASSIGN
@@ -1586,19 +1586,19 @@ std::string& RANS::decompress(const std::string& text, std::string& dst) const
   return rep(baseBYTE(text, value), dst);
 }
 
-double RANS::compression_ratio(int count_ = -1) const
+double RANS::compression_ratio(int count_ = -1, const RANS& base = baseBYTE) const
 {
   if (count_ < 0) {
     // return asymptotic ratio.
     return log(frobenius_root()) / log(baseBYTE.frobenius_root());
   } else {
-    return static_cast<double>(baseBYTE.rep(count(count_, true) - 1).length()) / count_;
+    return static_cast<double>(base.rep(count(count_, true) - 1).length()) / count_;
   }
 }
 
-double RANS::compression_ratio(const std::string& text) const
+double RANS::compression_ratio(const std::string& text, const RANS& base = baseBYTE) const
 {
-  return static_cast<double>(baseBYTE.length_of(val(text))) / text.length();
+  return static_cast<double>(base.length_of(val(text))) / text.length();
 }
 
 } // namespace rans

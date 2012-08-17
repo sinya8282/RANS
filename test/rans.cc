@@ -59,8 +59,10 @@ int main(int argc, char* argv[])
       std::cout << from.error() << std::endl << to.error() << std::endl;
       exit(0);
     }
-    
-    if (!FLAGS_text.empty()) {
+
+    if (FLAGS_compression_ratio) {
+      std::cout << from.compression_ratio(FLAGS_count, to) << std::endl;
+    } else if (!FLAGS_text.empty()) {
       try {
         std::cout << to(from(FLAGS_text)) << std::endl;
       } catch (RANS::Exception& e) {

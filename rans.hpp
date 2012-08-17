@@ -56,7 +56,7 @@
 #include <exception>
 #include <math.h>
 
-// External libraries: gmp(gmpxx), (optional: gflags, Boost.uBLAS)
+// External libraries: gmp(gmpxx), (optional: gflags)
 #include <gmpxx.h>
 
 #ifdef DEFINE_bool // if gflags is enabled
@@ -1083,48 +1083,6 @@ bool DFA::accept(const std::string& text) const
 
 typedef mpz_class Value;
 
-#ifdef RANS_USE_UBLAS
-// You can choose uBLAS as Matrix/Vector classes, but
-// it seems slower (both compilation time and peformance) than
-// self-implementation. (I'm not sure how to use uBLAS effectively,,,)
-// Therefore RANS_USE_UBLAS macro is *UNDEFINED* as a default in Makefile.
-} // escape namespace rans
-#include <boost/numeric/ublas/vector.hpp>
-#include <boost/numeric/ublas/matrix.hpp>
-#include <boost/numeric/ublas/io.hpp>
-#include <boost/numeric/ublas/operation.hpp>
-namespace rans { // re-enter namespace rans
-typedef boost::numeric::ublas::matrix<Value> MPMatrix;
-typedef boost::numeric::ublas::identity_matrix<Value> MPIdentityMatrix;
-typedef boost::numeric::ublas::vector<Value> MPVector;
-typedef boost::numeric::ublas::zero_vector<Value> MPZeroVector;
-
-MPMatrix& prod(MPMatrix& X, const MPMatrix& Y)
-{
-  return X = boost::numeric::ublas::prod(X, Y);
-}
-
-MPMatrix& prod(const MPMatrix& X, const MPMatrix& Y, MPMatrix& Z)
-{
-  return Z = boost::numeric::ublas::prod(X, Y);
-}
-
-MPVector& prod(MPVector& V, const MPMatrix& X)
-{
-  return V = boost::numeric::ublas::prod(V, X);
-}
-
-MPVector& prod(const MPVector& V, const MPMatrix& X, MPVector& W)
-{
-  return W = boost::numeric::ublas::prod(V, X);
-}
-
-Value& inner_prod(const MPVector& V, const MPVector& W, Value& v)
-{
-  return v = boost::numeric::ublas::inner_prod(V, W);
-}
-
-#else
 class MPMatrix {
  public:
   MPMatrix(std::size_t i = 0): _size(i), m(_size*_size) {}
@@ -1208,7 +1166,8 @@ class MPVector {
   Value& operator[](std::size_t i) { return _v[i]; }
   const Value& operator[](std::size_t i) const { return _v[i]; }
   void clear() { for (std::size_t i = 0; i < size(); i++) _v[i] = 0; }
-  MPVector& operator*=(const MPMatrix &X);
+  MPVector& operator*=(const MPMatrix&);
+  static Value& inner_prod(const MPVector&, const MPVector&, Value&);
  private:
   // fields
   std::vector<Value> _v;
@@ -1227,6 +1186,12 @@ MPVector& MPVector::operator*=(const MPMatrix &X)
   return *this;
 }
 
+Value& MPVector::inner_prod(const MPVector& V, const MPVector& W, Value& v)
+{
+  for (std::size_t i = 0; i < V.size(); i++) v += V[i] * W[i];
+  return v;
+}
+
 std::ostream& operator<<(std::ostream& stream, const MPVector& vector)
 {
   stream << "{";
@@ -1237,48 +1202,6 @@ std::ostream& operator<<(std::ostream& stream, const MPVector& vector)
   return stream;
 }
 
-MPMatrix& prod(MPMatrix& X, const MPMatrix& Y)
-{
-  return X *= Y;
-}
-
-MPMatrix& prod(const MPMatrix& X, const MPMatrix& Y, MPMatrix& Z)
-{
-  for (std::size_t i = 0; i < X.size(); i++) {
-    for (std::size_t j = 0; j < X.size(); j++) {
-      Z(i, j) = 0;
-      for (std::size_t k = 0; k < X.size(); k++) {
-        Z(i, j) += X(i, k) * Y(k, j);
-      }
-    }
-  }
-
-  return Z;
-}
-
-MPVector& prod(MPVector& V, const MPMatrix& Y)
-{
-  return V *= Y;
-}
-
-MPVector& prod(const MPVector& V, const MPMatrix& X, MPVector& W)
-{
-  for (std::size_t i = 0; i < V.size(); i++) {
-    W[i] = 0;
-    for (std::size_t j = 0; j < X.size(); j++) {
-      W[i] += V[j] * X(j, i);
-    }
-  }
-  return W;
-}
-
-Value& inner_prod(const MPVector& V, const MPVector& W, Value& v)
-{
-  for (std::size_t i = 0; i < V.size(); i++) v += V[i] * W[i];
-  return v;
-}
-#endif // RANS_USE_UBLAS
-
 // returns Y = X^n, with O(|X|^3 log n)-s factor-wise multiplications.
 // TODO: It seems more optimizable using linear algebraic techniques.
 MPMatrix& power(const MPMatrix& X, std::size_t n, MPMatrix& Y)
@@ -1287,8 +1210,8 @@ MPMatrix& power(const MPMatrix& X, std::size_t n, MPMatrix& Y)
   else Y = X;
 
   std::size_t i = 1;
-  while ((i *= 2) <= n) Y = prod(Y, Y);
-  for (i /= 2; i < n; i++) Y = prod(Y, X);
+  while ((i *= 2) <= n) Y *= Y;
+  for (i /= 2; i < n; i++) Y *= X;
 
   return Y;
 }
@@ -1408,12 +1331,12 @@ RANS::Value& RANS::val(const std::string& text, Value& value) const
       if (next != DFA::REJECT) paths[next]++;
     }
     state = _dfa[state][static_cast<unsigned char>(text[i])];
-    if (i < text.length() - 1) prod(paths, _adjacency_matrix);
+    if (i < text.length() - 1) paths *= _adjacency_matrix;
   }
 
   if (!_dfa.accept(state)) throw Exception("invalid text: text is not acceptable.");
 
-  inner_prod(paths, _accept_vector, value);
+  MPVector::inner_prod(paths, _accept_vector, value);
   
   return value;
 }
@@ -1481,7 +1404,7 @@ std::size_t RANS::length_of(const Value& value) const
   // exponential search
   do {
     tmpM_ = tmpM;
-    prod(tmpM, tmpM);
+    tmpM *= tmpM;
     if (length > size() &&
         tmpM(DFA::START, _extended_state) == tmpM_(DFA::START, _extended_state)) {
       // correspoding text does not exists. (theoretical judgment via Pumping lemma)
@@ -1494,7 +1417,7 @@ std::size_t RANS::length_of(const Value& value) const
   tmpM = tmpM_; length /= 2;
   do {
     tmpM_ = tmpM;
-    prod(tmpM, _extended_adjacency_matrix);
+    tmpM *= _extended_adjacency_matrix;
     length++;
   } while (tmpM(DFA::START, _extended_state) + _match_epsilon <= value);
 
@@ -1513,7 +1436,7 @@ Value RANS::amount() const
 
   do {
     amount_ = tmpM(DFA::START, _extended_state);
-    prod(tmpM, tmpM);
+    tmpM *= tmpM;
     length *= 2;
   } while (length < 2 * size());
 
@@ -1555,16 +1478,16 @@ double RANS::frobenius_root() const
     start_vector[i] = 1;
   }
   for (std::size_t i = 0; i < iteration; i++) {
-    prod(start_vector, _adjacency_matrix);
+    start_vector *= _adjacency_matrix;
   }
   for (std::size_t i = 0; i < size(); i++) {
     prev_vector[i] = start_vector[i];
   }
-  prod(start_vector, _adjacency_matrix);
+  start_vector *= _adjacency_matrix;
   
   Value value, prev_value;
-  inner_prod(start_vector, start_vector, value);
-  inner_prod(start_vector, prev_vector, prev_value);
+  MPVector::inner_prod(start_vector, start_vector, value);
+  MPVector::inner_prod(start_vector, prev_vector, prev_value);
 
   mpf_class root = value;
   root /= prev_value;

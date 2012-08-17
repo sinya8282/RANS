@@ -5,6 +5,10 @@
 #include <fstream>
 #include <string>
 
+DEFINE_bool(dump_dfa, false, "dump DFA as dot language.");
+DEFINE_bool(dump_matrix, false, "dump Matrix.");
+DEFINE_bool(dump_exmatrix, false, "dump Extended Matrix.");
+DEFINE_bool(dump_scc, false, "dump Strongly-connected-components of DFA.");
 DEFINE_string(f, "", "obtain patterns from FILE.");
 DEFINE_string(text, "", "print the value of given text on ANS.");
 DEFINE_string(quick_check, "", "check wheter given text is acceptable or not.");
@@ -23,6 +27,7 @@ DEFINE_bool(amount, false, "print number of acceptable strings that has less tha
 DEFINE_int64(count, -1, "print number of acceptable strings that just has specified characters in length.");
 DEFINE_bool(compression_ratio, false, "print asymptotic compression ratio [%].");
 DEFINE_bool(frobenius_root, false, "print frobenius root of adjacency matrix.");
+DEFINE_bool(frobenius_root2, false, "print frobenius root of adjacency matrix without linear algebraic optimization.");
 
 void dispatch(const RANS&);
 void set_filename(const std::string&, std::string&);
@@ -78,6 +83,19 @@ int main(int argc, char* argv[])
     exit(0);
   }
 
+  if (FLAGS_dump_dfa) std::cout << r.dfa();
+  if (FLAGS_dump_matrix) std::cout << r.adjacency_matrix();
+  if (FLAGS_dump_exmatrix) std::cout << r.extended_adjacency_matrix();
+  if (FLAGS_dump_scc) {
+    for (std::size_t i = 0; i < r.scc().size(); i++) {
+      for (std::set<std::size_t>::iterator iter = r.scc()[i].begin();
+           iter != r.scc()[i].end(); ++iter) {
+        std::cout << *iter << ", ";
+      }
+      std::cout << std::endl;
+    }
+  }
+  
   try {
     dispatch(r);
   } catch (RANS::Exception& e) {
@@ -90,7 +108,9 @@ int main(int argc, char* argv[])
 
 void dispatch(const RANS& r) {
   if (FLAGS_frobenius_root) {
-    std::cout << r.frobenius_root() << std::endl;
+    std::cout << r.spectrum().root << std::endl;
+  } else if (FLAGS_frobenius_root2) {
+    std::cout << r.adjacency_matrix().frobenius_root() << std::endl;
   } else if (FLAGS_compression_ratio) {
     std::cout << r.compression_ratio(FLAGS_count) << std::endl;
   } else if (FLAGS_amount) {

@@ -54,22 +54,11 @@
 #include <map>
 #include <algorithm>
 #include <exception>
+#include <cassert>
 #include <math.h>
 
-// External libraries: gmp(gmpxx), (optional: gflags)
+// External libraries: gmp(gmpxx)
 #include <gmpxx.h>
-
-#ifdef DEFINE_bool // if gflags is enabled
-DEFINE_bool(dump_expr, false, "dump Expr-tree.");
-DEFINE_bool(dump_dfa, false, "dump DFA as dot language.");
-DEFINE_bool(dump_matrix, false, "dump Matrix.");
-DEFINE_bool(dump_exmatrix, false, "dump Extended Matrix.");
-#else
-#define FLAGS_dump_expr false
-#define FLAGS_dump_dfa false
-#define FLAGS_dump_matrix false
-#define FLAGS_dump_exmatrix false
-#endif
 
 namespace rans {
 
@@ -557,8 +546,6 @@ void Parser::parse()
   }
 
   fill_transition(_expr_root);
-
-  if (FLAGS_dump_expr) _expr_root->dump();
 }
 
 Parser::Expr* Parser::parse_union()
@@ -1092,14 +1079,22 @@ class MPMatrix {
   void resize(std::size_t row, std::size_t col) { _size = row; m.resize(_size*_size); }
   friend std::ostream& operator<<(std::ostream& stream, const MPMatrix& matrix);
   std::size_t size() const { return _size; }
-  std::size_t size1() const { return size(); } // alias
   void clear();
   void init();
   void swap(MPMatrix &M) { m.swap(M.m); }
   Value& operator()(std::size_t i, std::size_t j) { return m[i*_size+j]; }
   const Value& operator()(std::size_t i, std::size_t j) const { return m[i*_size+j]; }
+  const Value& value(std::size_t i, std::size_t j) const { return m[i*_size+j]; }
   MPMatrix& operator*=(const MPMatrix&);
+  std::vector<std::set<std::size_t> >& scc(std::vector<std::set<std::size_t> >&) const;
+  MPMatrix& sub_matrix(const std::set<std::size_t>&, MPMatrix&) const;
+  double frobenius_root() const;
+
  private:
+  // for scc
+  void visit1(std::set<std::size_t>&, std::size_t, std::vector<std::size_t>&) const;
+  void visit2(std::set<std::size_t>&, std::size_t, std::set<std::size_t>&) const;
+
   // fields
   std::size_t _size;
   std::vector<Value> m;
@@ -1143,6 +1138,67 @@ void MPMatrix::init()
       (*this)(i, j) = i == j ? 1 : 0;
     }
   }
+}
+
+
+std::vector<std::set<std::size_t> >& MPMatrix::scc(std::vector<std::set<std::size_t> >& sccs) const
+{
+  sccs.clear();
+  std::set<std::size_t> elem;
+  std::vector<std::size_t> num;
+
+  for (std::size_t i = 0; i < size(); i++) {
+    if (elem.find(i) == elem.end()) visit1(elem, i, num);
+  }
+  elem.clear();
+  for (std::vector<std::size_t>::reverse_iterator iter = num.rbegin();
+       iter != num.rend(); ++iter) {
+    std::set<std::size_t> scc_;
+    if (elem.find(*iter) == elem.end()) visit2(elem, *iter, scc_);
+    if (scc_.size() == 1 && value(*iter, *iter) == 0) continue;
+    if (!scc_.empty()) sccs.push_back(scc_);
+  }
+
+  return sccs;
+}
+
+void MPMatrix::visit1(std::set<std::size_t>& elem, std::size_t v, std::vector<std::size_t>& num) const
+{
+  // vertex numbering based on post-order
+  elem.insert(v);
+  for (std::size_t i = 0; i < size(); i++) {
+    if (value(v, i) != 0 && elem.find(i) == elem.end()) {
+      visit1(elem, i, num);
+    }
+  }
+  num.push_back(v);
+}
+
+void MPMatrix::visit2(std::set<std::size_t>& elem, std::size_t v, std::set<std::size_t>& scc_) const
+{
+  // find scc of a given vertex v
+  elem.insert(v);
+  for (std::size_t i = 0; i < size(); i++) {
+    if (value(i, v) != 0 && elem.find(i) == elem.end()) {
+      visit2(elem, i, scc_);
+    }
+  }
+  scc_.insert(v);
+}
+
+MPMatrix& MPMatrix::sub_matrix(const std::set<std::size_t>& elem, MPMatrix& dst) const
+{
+  dst.resize(elem.size());
+  int i = 0, j;
+
+  for (std::set<size_t>::iterator iter1 = elem.begin(); iter1 != elem.end(); ++iter1, i++) {
+    j = 0;
+    for (std::set<size_t>::iterator iter2 = elem.begin(); iter2 != elem.end(); ++iter2, j++) {
+      dst(i, j) = value(*iter1, *iter2);
+    }    
+  }
+
+  return dst;
 }
 
 std::ostream& operator<<(std::ostream& stream, const MPMatrix& matrix)
@@ -1206,7 +1262,7 @@ std::ostream& operator<<(std::ostream& stream, const MPVector& vector)
 // TODO: It seems more optimizable using linear algebraic techniques.
 MPMatrix& power(const MPMatrix& X, std::size_t n, MPMatrix& Y)
 {
-  if (n == 0) Y = MPIdentityMatrix(X.size1());
+  if (n == 0) Y = MPIdentityMatrix(X.size());
   else Y = X;
 
   std::size_t i = 1;
@@ -1216,11 +1272,44 @@ MPMatrix& power(const MPMatrix& X, std::size_t n, MPMatrix& Y)
   return Y;
 }
 
+// calculate maximum eigenvalue (frovenius root) using simple power method.
+double MPMatrix::frobenius_root() const
+{
+  MPVector start_vector(size()), prev_vector(size());
+  // (255/256)^10000 = 1.0049656577513434e-17, good precision
+  const std::size_t iteration = 10000;
+
+  for (std::size_t i = 0; i < size(); i++) {
+    start_vector[i] = 1;
+  }
+  for (std::size_t i = 0; i < iteration; i++) {
+    start_vector *= *this;
+  }
+  for (std::size_t i = 0; i < size(); i++) {
+    prev_vector[i] = start_vector[i];
+  }
+  start_vector *= *this;
+  
+  Value value, prev_value;
+  MPVector::inner_prod(start_vector, start_vector, value);
+  MPVector::inner_prod(start_vector, prev_vector, prev_value);
+
+  mpf_class root = value;
+  root /= prev_value;
+  
+  return root.get_d();
+}
+
 class RANS {
  public:
   class Exception: public std::out_of_range {
    public:
     Exception(const std::string& error): std::out_of_range(error) {}
+  };
+  struct Spectrum {
+    Spectrum(double r, std::size_t m): root(m), multiplicity(m) {}
+    double root;
+    std::size_t multiplicity;
   };
   enum Encoding { ASCII = 0, UTF8 = 1 };
   typedef rans::Value Value;
@@ -1233,13 +1322,16 @@ class RANS {
   std::string& rep(const Value&, std::string &) const;
   std::string rep(const Value& value) const { std::string text; return rep(value, text); }
   const DFA& dfa() const { return _dfa; }
+  const MPMatrix& adjacency_matrix() const { return _adjacency_matrix; }
+  const MPMatrix& extended_adjacency_matrix() const { return _extended_adjacency_matrix; }
+  const std::vector<std::set<std::size_t> >& scc() const { return _scc; }
   std::size_t size() const { return _dfa.size(); }
   Value amount() const;
   bool finite() const { return amount() != -1; }
   bool infinite() const { return !finite(); }
   Value amount(std::size_t length) const { return count(length, true); }
   Value count(std::size_t length) const { return count(length, false); }
-  double frobenius_root() const;
+  const Spectrum& spectrum() const;
   // useful aliases for val & rep
   Value& operator()(const std::string& text, Value& value) const { return val(text, value); }
   Value operator()(const std::string& text) const { return val(text); }
@@ -1252,6 +1344,7 @@ class RANS {
   double compression_ratio(int count, const RANS&) const;
   double compression_ratio(const std::string& text, const RANS&) const;
   static const RANS baseBYTE;
+
  private:
   //DISALLOW COPY AND ASSIGN
   RANS(const RANS&);
@@ -1262,6 +1355,8 @@ class RANS {
   bool _ok;
   std::string _error;
   DFA _dfa;
+  std::vector<std::set<std::size_t> > _scc;
+  mutable Spectrum _spectrum;
   const int _match_epsilon;
   MPMatrix _adjacency_matrix;
   MPMatrix _extended_adjacency_matrix;
@@ -1272,6 +1367,7 @@ class RANS {
 
 RANS::RANS(const std::string &regex, Encoding enc = ASCII):
     _ok(true), _dfa(regex, rans::Encoding(enc)),
+    _spectrum(0, 0),
     _match_epsilon(_dfa.accept(DFA::START) ? 1 : 0),
     _extended_state(_dfa.size())
 {
@@ -1300,11 +1396,9 @@ RANS::RANS(const std::string &regex, Encoding enc = ASCII):
       }
     }
   }
-  _extended_adjacency_matrix(_extended_state, _extended_state) = 1;
 
-  if (FLAGS_dump_dfa) std::cout << _dfa << std::endl;
-  if (FLAGS_dump_matrix) std::cout << _adjacency_matrix << std::endl;
-  if (FLAGS_dump_exmatrix) std::cout << _extended_adjacency_matrix << std::endl;
+  _adjacency_matrix.scc(_scc);
+  _extended_adjacency_matrix(_extended_state, _extended_state) = 1;
 }
 
 // val(), which caliculates the value corresponds given text, is fundamental function of ANS.
@@ -1467,34 +1561,6 @@ Value RANS::count(std::size_t length, bool amount) const
   }
 }
 
-// calculate maximum eigenvalue (frovenius root) using simple power method.
-double RANS::frobenius_root() const
-{
-  MPVector start_vector(size()), prev_vector(size());
-  // (255/256)^10000 = 1.0049656577513434e-17, good precision
-  const std::size_t iteration = 10000;
-
-  for (std::size_t i = 0; i < size(); i++) {
-    start_vector[i] = 1;
-  }
-  for (std::size_t i = 0; i < iteration; i++) {
-    start_vector *= _adjacency_matrix;
-  }
-  for (std::size_t i = 0; i < size(); i++) {
-    prev_vector[i] = start_vector[i];
-  }
-  start_vector *= _adjacency_matrix;
-  
-  Value value, prev_value;
-  MPVector::inner_prod(start_vector, start_vector, value);
-  MPVector::inner_prod(start_vector, prev_vector, prev_value);
-
-  mpf_class root = value;
-  root /= prev_value;
-  
-  return root.get_d();
-}
-
 const RANS RANS::baseBYTE(".*");
 
 std::string& RANS::compress(const std::string& text, std::string& dst) const
@@ -1509,11 +1575,41 @@ std::string& RANS::decompress(const std::string& text, std::string& dst) const
   return rep(baseBYTE(text, value), dst);
 }
 
+const RANS::Spectrum& RANS::spectrum() const
+{
+  if (_spectrum.multiplicity != 0 || _scc.empty()) return _spectrum;
+
+  MPMatrix tmpM;
+
+  for (std::size_t i = 0; i < _scc.size(); i++) {
+    _adjacency_matrix.sub_matrix(_scc[i], tmpM);
+    double frobenius_root = tmpM.frobenius_root();
+    if (fabs(_spectrum.root - frobenius_root) < 0.001) {
+      _spectrum.multiplicity++;
+    } else if (frobenius_root > _spectrum.root) {
+      _spectrum.root = frobenius_root;
+      _spectrum.multiplicity = 1;
+    }
+  }
+
+  assert(_spectrum.root != 0 && _spectrum.multiplicity != 0);
+  return _spectrum;
+}
+
 double RANS::compression_ratio(int count_ = -1, const RANS& base = baseBYTE) const
 {
   if (count_ < 0) {
-    // return asymptotic ratio.
-    return log(frobenius_root()) / log(baseBYTE.frobenius_root());
+    // return asymptotic ratio based on frobenius root.
+    if (spectrum().root == 0 || base.spectrum().root == 0) { // finite language
+      throw "compression ratio is only defined on infinite langauges.";
+    }
+
+    if (base.spectrum().root != 1) {
+      return log(spectrum().root) / log(base.spectrum().root);
+    } else if (spectrum().root != 1) {
+      // compression ratio is infinity, then return -1;
+      return -1;
+    }
   } else {
     return static_cast<double>(base.rep(count(count_, true) - 1).length()) / count_;
   }

@@ -6,7 +6,7 @@ CXXFLAGS=-O0 -g3 -Wall -DRANS_DEBUG
 else
 CXXFLAGS=-O3
 endif
-RANS_CXXFLAGS=-I${shell pwd} -lgmp -lgmpxx -lmpfr
+RANS_CXXFLAGS=-I${shell pwd} -lgmp -lgmpxx
 
 prefix=/usr/local
 exec_prefix=$(prefix)

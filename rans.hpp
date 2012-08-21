@@ -147,6 +147,7 @@ class Parser {
   
   Parser(const std::string &, Encoding);
   Expr* expr_tree() { return _expr_root; }
+  const std::set<Expr*>& all_expr() const { return _all_expr; }
   Expr* expr(std::size_t);
   Expr* new_expr(ExprType, Expr*, Expr*);
   Expr* clone_expr(Expr*);
@@ -186,6 +187,7 @@ class Parser {
   const unsigned char* _regex_end;
   const unsigned char* _regex_ptr;
   std::deque<Expr> _expr_tree;
+  std::set<Expr*> _all_expr;
   Expr* _expr_root;
   std::bitset<256> _cc_table;
   unsigned char _literal;
@@ -732,8 +734,10 @@ Parser::Expr* Parser::parse_charclass()
 void Parser::fill_transition(Expr *expr)
 {
   switch (expr->type) {
-    case kLiteral: case kDot: case kCharClass:
-    case kEOP: case kEpsilon:
+    case kLiteral: case kCharClass: case kDot: case kEOP:
+      _all_expr.insert(expr);
+      // false through
+    case kEpsilon:
       break;
     case kConcat:
       connect(expr->lhs->last, expr->rhs->first);
@@ -769,8 +773,9 @@ class DFA {
     int operator[](std::size_t i) const { return t[i]; }
     int& operator[](std::size_t i) { return t[i]; }
   };
-  DFA(const std::string&, Encoding, bool);
+  DFA(const std::string&, Encoding, bool, bool);
   bool ok() const { return _ok; }
+  bool factorial() const { return _factorial; }
   const std::string& error() const { return _error; }
   std::size_t size() const { return _states.size(); }
   const State& state(std::size_t i) const { return _states[i]; }
@@ -783,13 +788,14 @@ class DFA {
   bool operator==(const DFA&) const;
   friend std::ostream& operator<<(std::ostream& stream, const DFA& dfa);
  private:
-  void construct(Parser::Expr* expr);
+  void construct(Parser::Expr* expr, const Subset& all_expr);
   void fill_transition(Parser::Expr*, std::vector<Subset>&);
   State& new_state();
   static std::string& pretty(unsigned char, std::string &);
 
   //fields
   bool _ok;
+  bool _factorial;
   std::string _error;
   std::deque<State> _states;
 };
@@ -880,7 +886,7 @@ std::string& rans::DFA::pretty(unsigned char c, std::string &label)
   return label;
 }
 
-DFA::DFA(const std::string &regex, Encoding enc = ASCII, bool do_minimize = true): _ok(true)
+DFA::DFA(const std::string &regex, Encoding enc = ASCII, bool do_minimize = true, bool factorial = false): _ok(true), _factorial(factorial)
 {
   Parser p(regex, enc);
   if (!p.ok()) {
@@ -890,7 +896,7 @@ DFA::DFA(const std::string &regex, Encoding enc = ASCII, bool do_minimize = true
   }
 
   try {
-    construct(p.expr_tree());
+    construct(p.expr_tree(), p.all_expr());
   } catch (const char* error) {
     _ok = false;
     _error = "dfa construct error: ";
@@ -907,14 +913,19 @@ DFA::DFA(const std::string &regex, Encoding enc = ASCII, bool do_minimize = true
   }
 }
 
-void DFA::construct(Parser::Expr* expr_tree)
+void DFA::construct(Parser::Expr* expr_tree, const Subset& all_expr)
 {
   int state_num = 0;
   std::vector<Subset> transition(256);
   std::queue<Subset> queue;
-  queue.push(expr_tree->first);
   std::map<Subset, int> subset_to_state;
-  subset_to_state[expr_tree->first] = state_num++;
+  if (_factorial) {
+    queue.push(all_expr);
+    subset_to_state[all_expr] = state_num++;
+  } else {
+    queue.push(expr_tree->first);
+    subset_to_state[expr_tree->first] = state_num++;
+  }
 
   while (!queue.empty()) {
     bool accept = false;
@@ -922,7 +933,7 @@ void DFA::construct(Parser::Expr* expr_tree)
     std::fill(transition.begin(), transition.end(), Subset());
 
     for (Subset::iterator iter = subset.begin(); iter != subset.end(); ++iter) {
-      accept |= (*iter)->type == Parser::kEOP;
+      accept |= _factorial | (*iter)->type == Parser::kEOP;
       fill_transition(*iter, transition);
     }
     queue.pop();
@@ -1313,7 +1324,7 @@ class RANS {
   };
   enum Encoding { ASCII = 0, UTF8 = 1 };
   typedef rans::Value Value;
-  RANS(const std::string&, Encoding);
+  RANS(const std::string&, Encoding, bool);
   bool ok() const { return _ok; }
   const std::string& error() const { return _error; }
   bool accept(const std::string& text) const { return _dfa.accept(text); }
@@ -1365,8 +1376,8 @@ class RANS {
   MPVector _accept_vector;
 };
 
-RANS::RANS(const std::string &regex, Encoding enc = ASCII):
-    _ok(true), _dfa(regex, rans::Encoding(enc)),
+RANS::RANS(const std::string &regex, Encoding enc = ASCII, bool factorial = false):
+    _ok(true), _dfa(regex, rans::Encoding(enc), true, factorial),
     _spectrum(0, 0),
     _match_epsilon(_dfa.accept(DFA::START) ? 1 : 0),
     _extended_state(_dfa.size())

@@ -28,6 +28,7 @@ DEFINE_int64(count, -1, "print number of acceptable strings that just has specif
 DEFINE_bool(compression_ratio, false, "print asymptotic compression ratio [%].");
 DEFINE_bool(frobenius_root, false, "print frobenius root of adjacency matrix.");
 DEFINE_bool(frobenius_root2, false, "print frobenius root of adjacency matrix without linear algebraic optimization.");
+DEFINE_bool(factorial, false, "make langauge as a factorial");
 
 void dispatch(const RANS&);
 void set_filename(const std::string&, std::string&);
@@ -77,7 +78,7 @@ int main(int argc, char* argv[])
     return 0;
   }
 
-  RANS r(regex, enc);
+  RANS r(regex, enc, FLAGS_factorial);
   if (!r.ok()) {
     std::cout << r.error() << std::endl;
     exit(0);

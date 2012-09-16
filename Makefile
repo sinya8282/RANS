@@ -31,7 +31,7 @@ bin/rans: rans.hpp test/rans.cc Makefile
 
 bin/test: rans.hpp test/test.cc Makefile
 	@mkdir -p $$(dirname $@)
-	$(CXX) $(CXXFLAGS) $(RANS_CXXFLAGS) test/test.cc -o $@ -lgtest -lgtest_main -lpthread
+	$(CXX) $(CXXFLAGS) $(RANS_CXXFLAGS) test/test.cc test/gtest/gtest-all.cc test/gtest/gtest_main.cc -Itest -o $@
 
 install: rans.hpp rans
 	mkdir -p $(DESTDIR)$(includedir) $(DESTDIR)$(bindir)

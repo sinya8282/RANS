@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include <rans.hpp>
 #include <map>
+#include <fstream>
 #include <string>
 
 TEST(ELEMENTAL_TEST, DFA_MINIMIZE) {
@@ -251,39 +252,34 @@ TEST(GOOGOL_BASE_TEST, RANS_REP) {
 
 
 // Complex regular language test.
-// Formal HTTP URL(URI) can be defined by regular expression.
-// #see RFC2396 Uniform Resource Identifiers (URI): Generic Syntax
-// -> http://www.ietf.org/rfc/rfc2396.txt
+// Formal URI can be defined by regular expression.
+// #see RFC2396/3986 Uniform Resource Identifiers (URI): Generic Syntax
+// -> http://www.ietf.org/rfc/rfc2396.txt, http://www.ietf.org/rfc/rfc3986.txt
 //
-// That is below. (my handwritten, might is wrong :-p)
-const std::string http_url_regex = "http://((([a-zA-Z0-9]|[a-zA-Z0-9][-a-zA-Z0-9]*[a-zA-Z0-9])\\.)*([a-zA-Z]|[a-zA-Z][-a-zA-Z0-9]*[a-zA-Z0-9])\\.?|[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+)(:[0-9]*)?(/([-_.!~*'()a-zA-Z0-9:@&=+$,]|%[0-9A-Fa-f][0-9A-Fa-f])*(;([-_.!~*'()a-zA-Z0-9:@&=+$,]|%[0-9A-Fa-f][0-9A-Fa-f])*)*(/([-_.!~*'()a-zA-Z0-9:@&=+$,]|%[0-9A-Fa-f][0-9A-Fa-f])*(;([-_.!~*'()a-zA-Z0-9:@&=+$,]|%[0-9A-Fa-f][0-9A-Fa-f])*)*)*(\\?([-_.!~*'()a-zA-Z0-9;/?:@&=+$,]|%[0-9A-Fa-f][0-9A-Fa-f])*)?)?";
 
-TEST(HTTP_URL_TEST, DFA_MINIMIZE) {
-  rans::DFA orig(http_url_regex, rans::ASCII, false); // do not minimization
-  rans::DFA mini = orig;
-  mini.minimize();
+RANS base_uri2396("([a-z][\\x2b\\x2d\\x2e0-9a-z]*:((//((((%[0-9a-f][0-9a-f]|[!\\x24&-\\x2e0-;=_a-z~])*@)?((([0-9a-z]|[0-9a-z][\\x2d0-9a-z]*[0-9a-z])\\x2e)*([a-z]|[a-z][\\x2d0-9a-z]*[0-9a-z])\\x2e?|\\d+\\x2e\\d+\\x2e\\d+\\x2e\\d+)(:\\d*)?)?|(%[0-9a-f][0-9a-f]|[!\\x24&-\\x2e0-;=@_a-z~])+)(/(%[0-9a-f][0-9a-f]|[!\\x24&-\\x2e0-:=@_a-z~])*(;(%[0-9a-f][0-9a-f]|[!\\x24&-\\x2e0-:=@_a-z~])*)*(/(%[0-9a-f][0-9a-f]|[!\\x24&-\\x2e0-:=@_a-z~])*(;(%[0-9a-f][0-9a-f]|[!\\x24&-\\x2e0-:=@_a-z~])*)*)*)?|/(%[0-9a-f][0-9a-f]|[!\\x24&-\\x2e0-:=@_a-z~])*(;(%[0-9a-f][0-9a-f]|[!\\x24&-\\x2e0-:=@_a-z~])*)*(/(%[0-9a-f][0-9a-f]|[!\\x24&-\\x2e0-:=@_a-z~])*(;(%[0-9a-f][0-9a-f]|[!\\x24&-\\x2e0-:=@_a-z~])*)*)*)(\\x3f([!\\x24&-;=\\x3f@_a-z~]|%[0-9a-f][0-9a-f])*)?|(%[0-9a-f][0-9a-f]|[!\\x24&-\\x2e0-;=\\x3f@_a-z~])([!\\x24&-;=\\x3f@_a-z~]|%[0-9a-f][0-9a-f])*)|(//((((%[0-9a-f][0-9a-f]|[!\\x24&-\\x2e0-;=_a-z~])*@)?((([0-9a-z]|[0-9a-z][\\x2d0-9a-z]*[0-9a-z])\\x2e)*([a-z]|[a-z][\\x2d0-9a-z]*[0-9a-z])\\x2e?|\\d+\\x2e\\d+\\x2e\\d+\\x2e\\d+)(:\\d*)?)?|(%[0-9a-f][0-9a-f]|[!\\x24&-\\x2e0-;=@_a-z~])+)(/(%[0-9a-f][0-9a-f]|[!\\x24&-\\x2e0-:=@_a-z~])*(;(%[0-9a-f][0-9a-f]|[!\\x24&-\\x2e0-:=@_a-z~])*)*(/(%[0-9a-f][0-9a-f]|[!\\x24&-\\x2e0-:=@_a-z~])*(;(%[0-9a-f][0-9a-f]|[!\\x24&-\\x2e0-:=@_a-z~])*)*)*)?|/(%[0-9a-f][0-9a-f]|[!\\x24&-\\x2e0-:=@_a-z~])*(;(%[0-9a-f][0-9a-f]|[!\\x24&-\\x2e0-:=@_a-z~])*)*(/(%[0-9a-f][0-9a-f]|[!\\x24&-\\x2e0-:=@_a-z~])*(;(%[0-9a-f][0-9a-f]|[!\\x24&-\\x2e0-:=@_a-z~])*)*)*|(%[0-9a-f][0-9a-f]|[!\\x24&-\\x2e0-9;=@_a-z~])+(/(%[0-9a-f][0-9a-f]|[!\\x24&-\\x2e0-:=@_a-z~])*(;(%[0-9a-f][0-9a-f]|[!\\x24&-\\x2e0-:=@_a-z~])*)*(/(%[0-9a-f][0-9a-f]|[!\\x24&-\\x2e0-:=@_a-z~])*(;(%[0-9a-f][0-9a-f]|[!\\x24&-\\x2e0-:=@_a-z~])*)*)*)?)(\\x3f([!\\x24&-;=\\x3f@_a-z~]|%[0-9a-f][0-9a-f])*)?)?(\\x23([!\\x24&-;=\\x3f@_a-z~]|%[0-9a-f][0-9a-f])*)?");
+RANS base_uri3986("[a-z][\\x2b\\x2d\\x2e0-9a-z]*:(//(([\\x2d\\x2e0-9_a-z~]|%[0-9a-f][0-9a-f]|[!\\x24&-,:;=])*@)?(\\x5b(([0-9a-f]{1,4}:){6}([0-9a-f]{1,4}:[0-9a-f]{1,4}|(\\d|[1-9]\\d|1\\d{2}|2[0-4]\\d|25[0-5])\\x2e(\\d|[1-9]\\d|1\\d{2}|2[0-4]\\d|25[0-5])\\x2e(\\d|[1-9]\\d|1\\d{2}|2[0-4]\\d|25[0-5])\\x2e(\\d|[1-9]\\d|1\\d{2}|2[0-4]\\d|25[0-5]))|::([0-9a-f]{1,4}:){5}([0-9a-f]{1,4}:[0-9a-f]{1,4}|(\\d|[1-9]\\d|1\\d{2}|2[0-4]\\d|25[0-5])\\x2e(\\d|[1-9]\\d|1\\d{2}|2[0-4]\\d|25[0-5])\\x2e(\\d|[1-9]\\d|1\\d{2}|2[0-4]\\d|25[0-5])\\x2e(\\d|[1-9]\\d|1\\d{2}|2[0-4]\\d|25[0-5]))|([0-9a-f]{1,4})?::([0-9a-f]{1,4}:){4}([0-9a-f]{1,4}:[0-9a-f]{1,4}|(\\d|[1-9]\\d|1\\d{2}|2[0-4]\\d|25[0-5])\\x2e(\\d|[1-9]\\d|1\\d{2}|2[0-4]\\d|25[0-5])\\x2e(\\d|[1-9]\\d|1\\d{2}|2[0-4]\\d|25[0-5])\\x2e(\\d|[1-9]\\d|1\\d{2}|2[0-4]\\d|25[0-5]))|(([0-9a-f]{1,4}:)?[0-9a-f]{1,4})?::([0-9a-f]{1,4}:){3}([0-9a-f]{1,4}:[0-9a-f]{1,4}|(\\d|[1-9]\\d|1\\d{2}|2[0-4]\\d|25[0-5])\\x2e(\\d|[1-9]\\d|1\\d{2}|2[0-4]\\d|25[0-5])\\x2e(\\d|[1-9]\\d|1\\d{2}|2[0-4]\\d|25[0-5])\\x2e(\\d|[1-9]\\d|1\\d{2}|2[0-4]\\d|25[0-5]))|(([0-9a-f]{1,4}:){0,2}[0-9a-f]{1,4})?::([0-9a-f]{1,4}:){2}([0-9a-f]{1,4}:[0-9a-f]{1,4}|(\\d|[1-9]\\d|1\\d{2}|2[0-4]\\d|25[0-5])\\x2e(\\d|[1-9]\\d|1\\d{2}|2[0-4]\\d|25[0-5])\\x2e(\\d|[1-9]\\d|1\\d{2}|2[0-4]\\d|25[0-5])\\x2e(\\d|[1-9]\\d|1\\d{2}|2[0-4]\\d|25[0-5]))|(([0-9a-f]{1,4}:){0,3}[0-9a-f]{1,4})?::[0-9a-f]{1,4}:([0-9a-f]{1,4}:[0-9a-f]{1,4}|(\\d|[1-9]\\d|1\\d{2}|2[0-4]\\d|25[0-5])\\x2e(\\d|[1-9]\\d|1\\d{2}|2[0-4]\\d|25[0-5])\\x2e(\\d|[1-9]\\d|1\\d{2}|2[0-4]\\d|25[0-5])\\x2e(\\d|[1-9]\\d|1\\d{2}|2[0-4]\\d|25[0-5]))|(([0-9a-f]{1,4}:){0,4}[0-9a-f]{1,4})?::([0-9a-f]{1,4}:[0-9a-f]{1,4}|(\\d|[1-9]\\d|1\\d{2}|2[0-4]\\d|25[0-5])\\x2e(\\d|[1-9]\\d|1\\d{2}|2[0-4]\\d|25[0-5])\\x2e(\\d|[1-9]\\d|1\\d{2}|2[0-4]\\d|25[0-5])\\x2e(\\d|[1-9]\\d|1\\d{2}|2[0-4]\\d|25[0-5]))|(([0-9a-f]{1,4}:){0,5}[0-9a-f]{1,4})?::[0-9a-f]{1,4}|(([0-9a-f]{1,4}:){0,6}[0-9a-f]{1,4})?::|v[0-9a-f]+\\x2e[!\\x24&-\\x2e0-;=_a-z~]+)\\x5d|(\\d|[1-9]\\d|1\\d{2}|2[0-4]\\d|25[0-5])\\x2e(\\d|[1-9]\\d|1\\d{2}|2[0-4]\\d|25[0-5])\\x2e(\\d|[1-9]\\d|1\\d{2}|2[0-4]\\d|25[0-5])\\x2e(\\d|[1-9]\\d|1\\d{2}|2[0-4]\\d|25[0-5])|([\\x2d\\x2e0-9_a-z~]|%[0-9a-f][0-9a-f]|[!\\x24&-,;=])*)(:\\d*)?(/([\\x2d\\x2e0-9_a-z~]|%[0-9a-f][0-9a-f]|[!\\x24&-,:;=@])*)*|/(([\\x2d\\x2e0-9_a-z~]|%[0-9a-f][0-9a-f]|[!\\x24&-,:;=@])+(/([\\x2d\\x2e0-9_a-z~]|%[0-9a-f][0-9a-f]|[!\\x24&-,:;=@])*)*)?|([\\x2d\\x2e0-9_a-z~]|%[0-9a-f][0-9a-f]|[!\\x24&-,:;=@])+(/([\\x2d\\x2e0-9_a-z~]|%[0-9a-f][0-9a-f]|[!\\x24&-,:;=@])*)*)?(\\x3f([\\x2d\\x2e0-9_a-z~]|%[0-9a-f][0-9a-f]|[!\\x24&-,/:;=\\x3f@])*)?(\\x23([\\x2d\\x2e0-9_a-z~]|%[0-9a-f][0-9a-f]|[!\\x24&-,/:;=\\x3f@])*)?");
 
-  const std::size_t dfa_size_of_http_url_regex = 25;
-  ASSERT_EQ(dfa_size_of_http_url_regex, mini.size());
-  ASSERT_EQ(orig, mini);
+TEST(URI_TEST, DFA_MINIMIZE) {
+  ASSERT_EQ(12, base_uri2396.size());
+  ASSERT_EQ(179, base_uri3986.size());
 }
 
-RANS base_http(http_url_regex);
 const std::string homepage_url("http://swatmac.info/");
-const RANS::Value homepage_val("418454636203975692482093");
+const RANS::Value homepage_val_rfc2396("47707318137249109960017513245316138");
+const RANS::Value homepage_val_rfc3986("846983527258207777892746259575925");
 
-const std::string googol_url("http://A/Yq~s3G7F.3uK:M5r_swBtJW~7ZmRGX1mO:,I6lB2YT$(BZriW@&.");
-
-TEST(HTTP_URL_TEST, RANS_VAL) {
-  ASSERT_EQ(homepage_val, base_http(homepage_url));
-  ASSERT_EQ(googol, base_http(googol_url));
+TEST(URI_TEST, RANS_VAL) {
+  ASSERT_EQ(homepage_val_rfc2396, base_uri2396(homepage_url));
+  ASSERT_EQ(homepage_val_rfc3986, base_uri3986(homepage_url));
 }
 
-TEST(HTTP_URL_TEST, RANS_REP) {
-  ASSERT_EQ(homepage_url, base_http(homepage_val));
-  ASSERT_EQ(googol_url, base_http(googol));
+TEST(URI_TEST, RANS_REP) {
+  ASSERT_EQ(homepage_url, base_uri2396(homepage_val_rfc2396));
+  // ASSERT_EQ(homepage_url, base_uri3986(homepage_val_rfc3986));
 }
 
-TEST(HTTP_URL_TEST, RANS_FINITE) {
-  ASSERT_TRUE(base_http.infinite());
+TEST(URI_TEST, RANS_FINITE) {
+  ASSERT_TRUE(base_uri2396.infinite());
+  // ASSERT_TRUE(base_uri3986.infinite());
 }

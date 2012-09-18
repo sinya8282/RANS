@@ -283,3 +283,10 @@ TEST(URI_TEST, RANS_FINITE) {
   ASSERT_TRUE(base_uri2396.infinite());
   // ASSERT_TRUE(base_uri3986.infinite());
 }
+
+TEST(URI_TEST, RANS_COMPRESSION_RATIO) {
+  ASSERT_GT(base_uri2396.spectrum().root, 55.0);
+  ASSERT_LT(base_uri2396.spectrum().root, 55.1);
+  ASSERT_EQ(base_uri2396.spectrum().root, base_uri3986.spectrum().root);
+  ASSERT_EQ(1.0, base_uri3986.compression_ratio(-1, base_uri2396)); // same compression ratio
+}

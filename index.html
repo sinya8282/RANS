@@ -38,23 +38,22 @@
 
         <h3>Introduction</h3>
 
-<p>RANS is a library, implementation of Abstract Numeration System (ANS) on a regular language.</br>
-RANS's concept is very simple, just calculates the number from given string on a regular language. In other words,
+<p>RANS is a library, the implementation of an Abstract Numeration System (ANS) on a regular language.</br>
+RANS's concept is very simple, just calculates the number from the given string on a regular language. In other words,
 <ul>
-  <li>RANS provides a minimal perfect hash function that maps string to positive integer.</li>
-  <li>RANS provides the 'val' that is a bijective function from N onto a language.</li>
-  <li>　　 and 'rep' is a inverse function of 'val'.</li>
-  <li>RANS makes set of acceptable string totally ordered by <a href="http://en.wikipedia.org/wiki/Lexicographical_order#Ordering_of_sequences_of_various_lengths">Lexicographic order</a>.</li>
+  <li>RANS provides the minimal perfect hash function that maps string to positive integer.</li>
+  <li>RANS provides the 'val' that is the bijective function from N onto a language.</li>
+  <li>　　 and 'rep' is the inverse function of 'val'.</li>
+  <li>RANS makes the set of acceptable string totally ordered by the <a href="http://en.wikipedia.org/wiki/Lexicographical_order#Ordering_of_sequences_of_various_lengths">Lexicographic order</a>.</li>
 </ul>
-Example, let regular language L = { "", "a", "b", "c", "aa", "ab", "ac", "bb", "cc", "aaa", ... }, map val: L -> N, and inverse function rep: N -> L. then:
+Example: Let a regular language L = { "", "a", "b", "c", "aa", "ab", "ac", "bb", "cc", "aaa", ... }, val: L -> N, and inverse function rep: N -> L. then following equations holds:
 </p>
 <pre><code class="prettyprint lang-sh"> val("")==0, rep(2)=="b", val("c")==3, rep(5)=="ab", val("aaa")=9
 </code></pre>
-<p>are hold. These definition and aspect as stated above is basic concept of ANS.
+<p>These definition and aspect as stated above is basic concept of an ANS.
 </p>
 
 <h3>Install and Try RANS</h3>
-
 <p>RANS's main code is contained in actually one header file: <a href="http://github.com/sinya8282/RANS/blob/master/rans.hpp">rans.hpp</a></br>
 If you wants to use RANS as a C++ library, check this page <a href="api.html">RANS C++ API Documentation</a>.</br></br>
 
@@ -86,7 +85,7 @@ aaaaaaaaaccccccccccccccccccccccccccccccccccccccc
 
 <h3>Regular Expression Syntax</h3>
 
-<p>You could check syntax via --syntax option</p>
+<p>You could check the syntax via --syntax option</p>
 <pre><code class="prettyprint lang-sh">% rans --syntax
 RANS "simplified" extended regular expression syntax:
   regex      ::= union* EOP
@@ -104,17 +103,17 @@ RANS "simplified" extended regular expression syntax:
                | [\xF0-\xF7][\x80-\xBF]{3}
 </code></pre>
 
-<p>NOTE: dot '.' matchs any 1byte character, including <b>newline '\n'.</p>
+<p>NOTE: the dot symbol '<b>.</b>' matchs any 1byte character, including the newline symbol '<b>\n</b>'.</p>
 
 <h3>Use RANS as a Text Converter</h3>
 
-I often see this question in web, 「How to convert Hexadecimal and Octal to Binary?」. RANS provides general solution of this problem(Base-conversion, moregeneraly). It's simple, calculates the val() of given text on base-k language, and then calculates the rep() of before val() on base-l language.</br></br>
+I often see this question in web, 「How to convert Hexadecimal and Octal to Binary?」. RANS provides a general solution of this problem(base-conversion). It's simple, calculates the val() of the given text on the language which represents a base-k numeration system, and then calculates the rep() on the language which represents a base-l numeration system.</br></br>
 
-Example:
-<pre><code class="prettyprint lang-sh">% # first, convert decimal representation to octal representation
+Example (Hexadecimal-Octal conversion):
+<pre><code class="prettyprint lang-sh">% # first, convert the decimal representation to the octal representation.
 % rans '0|[1-7][0-7]*' --text 31723501261722172350012617220172317235012617221501261722172350126172217235012617221
 366279202153417409243738390844334144022596873428737191758601997964469280401
-% # OK. next, convert this value to hexadecimal representation
+% # OK. next, convert this value to the hexadecimal representation of itself.
 % rans '0|[1-9A-F][0-9A-F]*' --value 366279202153417409243738390844334144022596873428737191758601997964469280401
 CF4E82B1E91E9D00AC7A40F4CF4E82B1E91A0AC7A47A74158F48F4E82B1E91
 % # You can do that more directly using --convert_from and --convert_to options.
@@ -123,29 +122,27 @@ CF4E82B1E91E9D00AC7A40F4CF4E82B1E91A0AC7A47A74158F48F4E82B1E91
 </code></pre>
 </br>
 
-<h3>Use RANS as a Data Compressor</h3>
+<h3>Use RANS as a Compressor</h3>
 
 <p>RANS's concept is very simple, but more flexible than that. <br>
 You might think 「So what? Is there any practical usage?」</br>
 <font color="#F2F2F2">(｀・ω・´) イイぜっ!! 見せてやるっ！正規表現の無限の可能性をよっ！</font>
 </br>
-Okay, here I give a more practical example of engineering application about "compression".</br>
-that is, http-url.</p>
+Okay, here I give the more practical example about "compression". That is, http-url.</p>
 
-<p><a href="http://www.ietf.org/rfc/rfc2396.txt">formal http-url syntax</a> can be defined by the (POSIX extended) regular expression.
-such as:
+<p><a href="http://www.ietf.org/rfc/rfc2396.txt">Formal http-url syntax</a> can be defined by the (POSIX extended) regular expression.
+In this example, we consider the more simple regular expression of http-url, such as:
 </p>
 
 <pre><code>http://((([a-zA-Z0-9]|[a-zA-Z0-9][-a-zA-Z0-9]*[a-zA-Z0-9])\\.)*([a-zA-Z]|[a-zA-Z][-a-zA-Z0-9]*[a-zA-Z0-9])\\.?|[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+)(:[0-9]*)?(/([-_.!~*'()a-zA-Z0-9:@&=+$,]|%[0-9A-Fa-f][0-9A-Fa-f])*(;([-_.!~*'()a-zA-Z0-9:@&=+$,]|%[0-9A-Fa-f][0-9A-Fa-f])*)*(/([-_.!~*'()a-zA-Z0-9:@&=+$,]|%[0-9A-Fa-f][0-9A-Fa-f])*(;([-_.!~*'()a-zA-Z0-9:@&=+$,]|%[0-9A-Fa-f][0-9A-Fa-f])*)*)*(\\?([-_.!~*'()a-zA-Z0-9;/?:@&=+$,]|%[0-9A-Fa-f][0-9A-Fa-f])*)?)?
 </code></pre>
-(my handwritten, might be wrong :-p)
 
 <p>This is hairy, pathological expression. However, the minimal DFA that corresponds this has only 26 states. I generated one graph of this DFA via --dump_dfa option (also this expression is contained in the repository: test/<a href="http://github.com/sinya8282/RANS/blob/master/test/http-url.regex">http-url.regex</a>).</p>
 <pre><code class="prettyprint lang-sh"> % rans -f test/http-url.regex --dump_dfa | dot -Tpng -o http-url.png </code></pre>
 <p>as shown below. <img src="images/http-url.png"></p>
 <p>
 
-<p>Good. http-url is definable by a regular expression, recognizable by a DFA, and moreover - numerable by RANS.</br>
+<p>Good. http-url is definable by the regular expression, recognizable by the DFA, and so enumerable with RANS.</br>
 Let's try to get the number of this page's http-url: <a href="http://sinya8282.github.com/RANS/">http://sinya8282.github.com/RANS/</a>
 </p>
 <pre><code class="prettyprint lang-sh">% rans -f test/http-url.regex --text "http://sinya8282.github.com/RANS/"
@@ -155,7 +152,7 @@ http://sinya8282.github.com/RANS/
 % # Do you remember seeing that number somewhere before ? ;-)
 </code></pre>
 
-<p>and data size of this url and number is 33 and 20 (Bytes). You can make sure it by --compress/--decompress option.</p>
+<p>and the data size of this url and the number is 33 and 20 (Bytes). You can make sure it by --compress/--decompress options.</p>
 <pre><code class="prettyprint lang-sh">% echo -n "http://sinya8282.github.com/RANS/" > url
 % rans -f test/http-url.regex --compress url 
 % ls -lh url url.rans   # compressed file is created with '.rans' extension
@@ -167,14 +164,14 @@ http://sinya8282.github.com/RANS/
 http://sinya8282.github.com/RANS/
 </code></pre>
 
-<p>that is, I think RANS can gives us "compact" representation of source text on the assumption that we know well-defined language (or scheme, regular expression). like a http-url, there are many scheme based languages in real-world.</br></br>
-So what do you use it for? dispose of the matter at YOUR discretion ;-)</p>
+<p>That is, RANS can gives us the "compact" representation of the input string on the assumption that we know the well-defined language (or scheme, regular expression) of the set of input strings. As http-url, there are many scheme based languages in the real world.</br></br>
+So what do you use it for? Dispose of the matter at YOUR discretion.</p>
 
 <p>You can see more usage via --helpshort option</p>
 
-<h4>Performance: Does RANS work well on Big Data?</h4>
+<h4>Performance: Does RANS works well on a Big Data?</h4>
 
-<p>No, I don't think so (at least for now).</br>
+<p>No, I don't think so (at least for current implementation).</br>
 Because the larger the number becomes, the more operation and space will be needed in multiprecision integer multiplication (RANS uses GMP C++ class interface).</br></br>
 
 Suppose a each multiplication performs in constant time, val() runs in time O(n*|D|^2) and rep() runs in time O(n log n * |D|^3) where n is the length of the source text and |D| denotes the size of the DFA.
@@ -182,8 +179,8 @@ Suppose a each multiplication performs in constant time, val() runs in time O(n*
 
 <h3>Do you become interested in RANS?</br>and how it works internally?</h3>
 
-<p>You could check <a href="https://github.com/sinya8282/RANS">source code in repository</a>!</br>
-Also if you interested in ANS, more mathematical aspects, see Berthé and Rigo's great book <a href="http://www.cambridge.org/gb/knowledge/isbn/item2708037">"Combinatorics, Automata and Number Theory"</a> or their lecture notes.</p>
+<p>You could check the <a href="https://github.com/sinya8282/RANS">source code in the repository</a>!</br>
+Also if you interested in an ANS, more mathematical aspects, see Berthé and Rigo's work <a href="http://www.cambridge.org/gb/knowledge/isbn/item2708037">"Combinatorics, Automata and Number Theory"</a> or their lecture notes.</p>
 
 <h3>Author</h3>
 <p>Ryoma Sin'ya (<a href="http://twitter.com/sinya8282">@sinya8282</a>)</p>

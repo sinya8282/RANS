@@ -14,17 +14,17 @@
    |____| |___||____| |____||_____|\____| \______.'
 
 */
-// RANS - Implementation of Abstract-Numeration-System(ANS) on a regular language.
-// This header file consists of mainly three parts described below.
+// RANS - An implementation of Abstract-Numeration-System(ANS) on a regular language.
+// This header file is mainly consisted of the three parts described below.
 //
-// rans::DFA (and Parse) is simple DFA implementation.
-// Parse recognizes simplified extended regular expression.
+// rans::DFA (and rans::Parser) is a simple DFA implementation.
+// rans::Parser recognizes a simplified extended regular expression.
 //
-// rans::MPMatrix (and MPVector) is Multi-Precision Integer Matrix and Vector
+// rans::MPMatrix (and MPVector) is a Multi-Precision Integer Matrix and Vector
 // implementation. it's necessary to calculate both value and representation
-// on ANS. I implemented ANS by using a adjacency matrix of DFA.
+// on ANS. I have implemented ANS by using a adjacency matrix of a DFA.
 //
-// rans::RANS, which has essential function val() and rep(), is main class.
+// rans::RANS, which has the essential function val() and rep(), is main class.
 // - val(text) returns a number N that means 'given text is Nth acceptable string
 //   in regular languages'
 // - rep(value), which is inverse function of val(text), returns a correspoinding
@@ -33,15 +33,15 @@
 //           r1.rep(3)=="ababab"; r1.val("")==0; r1.val("ab")==1;
 //           r2.rep(1)=="a"; r2.rep(4)=="aa"; r2.val("aaa")==9;
 //
-// This class would be exported (using rans::RANS), so users can use simply
+// rans::RANS class would be exported (using rans::RANS), so users can use simply
 // just like: 'RANS r(regex); RANS::Value value = r(text);'.
 //
-// To see more detail and usage, you could check RANS/test/rans.cc, which is
-// RANS simple program, and RANS/test/test.cc, which contains some theortical
-// notes. and project page of RANS - http://sinya8282.github.com/RANS
+// To see more details and usage, you could check RANS/test/rans.cc, which is
+// simple program using RANS, and RANS/test/test.cc, which contains some theortical
+// notes. and the project page of RANS - http://sinya8282.github.com/RANS
 //
-// Also, you can get more interesting, thoretical aspects by Berthé and Rigo's
-// great book - "Combinatorics, Automata and Number Theory".
+// Also, you can obaine more interesting/thoretical aspects of ANS by Berthé and
+// Rigo's great book - "Combinatorics, Automata and Number Theory".
 
 #include <iostream>
 #include <sstream>

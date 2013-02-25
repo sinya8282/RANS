@@ -10,6 +10,7 @@ DEFINE_bool(dump_matrix, false, "dump Matrix.");
 DEFINE_bool(dump_exmatrix, false, "dump Extended Matrix.");
 DEFINE_bool(dump_scc, false, "dump Strongly-connected-components of DFA.");
 DEFINE_string(f, "", "obtain patterns from FILE.");
+DEFINE_bool(i, false, "ignore case distinctions in both the REGEX and the input files..");
 DEFINE_string(text, "", "print the value of given text on ANS.");
 DEFINE_string(quick_check, "", "check wheter given text is acceptable or not.");
 DEFINE_string(value, "", "print the text of given value on ANS.");
@@ -60,7 +61,8 @@ int main(int argc, char* argv[])
 
   RANS::Encoding enc = FLAGS_utf8 ? RANS::UTF8 : RANS::ASCII;
   if (!FLAGS_convert_from.empty() && !FLAGS_convert_to.empty()) {
-    RANS from(FLAGS_convert_from), to(FLAGS_convert_to);
+    RANS from(FLAGS_convert_from, enc, FLAGS_factorial, FLAGS_i),
+        to(FLAGS_convert_to, enc, FLAGS_factorial, FLAGS_i);
     if (!from.ok() || !to.ok()) {
       std::cout << from.error() << std::endl << to.error() << std::endl;
       exit(0);
@@ -78,7 +80,7 @@ int main(int argc, char* argv[])
     return 0;
   }
 
-  RANS r(regex, enc, FLAGS_factorial);
+  RANS r(regex, enc, FLAGS_factorial, FLAGS_i);
   if (!r.ok()) {
     std::cout << r.error() << std::endl;
     exit(0);

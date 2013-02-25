@@ -83,6 +83,16 @@ enum Encoding {
   UTF8 = 1
 };
 
+unsigned char opposite_case(const unsigned char c) {
+  if ('a' <= c && c <= 'z') {
+    return c - 'a' + 'A';
+  } else if ('A' <= c && c <= 'Z') {
+    return c - 'A' + 'a';
+  } else {
+    return c;
+  }
+}
+
 std::size_t utf8_byte_length(const unsigned char c)
 {
   static const std::size_t len[256] = {
@@ -773,9 +783,10 @@ class DFA {
     int operator[](std::size_t i) const { return t[i]; }
     int& operator[](std::size_t i) { return t[i]; }
   };
-  DFA(const std::string&, Encoding, bool, bool);
+  DFA(const std::string&, Encoding, bool, bool, bool);
   bool ok() const { return _ok; }
   bool factorial() const { return _factorial; }
+  bool ignorecase() const { return _ignorecase; }
   const std::string& error() const { return _error; }
   std::size_t size() const { return _states.size(); }
   const State& state(std::size_t i) const { return _states[i]; }
@@ -796,6 +807,7 @@ class DFA {
   //fields
   bool _ok;
   bool _factorial;
+  bool _ignorecase;
   std::string _error;
   std::deque<State> _states;
 };
@@ -886,7 +898,7 @@ std::string& rans::DFA::pretty(unsigned char c, std::string &label)
   return label;
 }
 
-DFA::DFA(const std::string &regex, Encoding enc = ASCII, bool do_minimize = true, bool factorial = false): _ok(true), _factorial(factorial)
+DFA::DFA(const std::string &regex, Encoding enc = ASCII, bool do_minimize = true, bool factorial = false, bool ignorecase = false): _ok(true), _factorial(factorial), _ignorecase(ignorecase)
 {
   Parser p(regex, enc);
   if (!p.ok()) {
@@ -962,12 +974,20 @@ void DFA::fill_transition(Parser::Expr* expr, std::vector<DFA::Subset>& transiti
     case Parser::kLiteral: {
       unsigned char index = expr->literal;
       transition[index].insert(expr->follow.begin(), expr->follow.end());
+      if (ignorecase()) {
+        unsigned char index_ = opposite_case(index);
+        if (index_ != index) transition[index_].insert(expr->follow.begin(), expr->follow.end());
+      }
       break;
     }
     case Parser::kCharClass: {
       for (std::size_t c = 0; c < 256; c++) {
         if (expr->cc_table[c]) {
           transition[c].insert(expr->follow.begin(), expr->follow.end());
+          if (ignorecase()) {
+            unsigned char c_ = opposite_case(static_cast<unsigned char>(c));
+            if (c_ != c && !expr->cc_table[c_]) transition[c_].insert(expr->follow.begin(), expr->follow.end());
+          }
         }
       }
       break;
@@ -1324,7 +1344,7 @@ class RANS {
   };
   enum Encoding { ASCII = 0, UTF8 = 1 };
   typedef rans::Value Value;
-  RANS(const std::string&, Encoding, bool);
+  RANS(const std::string&, Encoding, bool, bool);
   bool ok() const { return _ok; }
   const std::string& error() const { return _error; }
   bool accept(const std::string& text) const { return _dfa.accept(text); }
@@ -1376,8 +1396,8 @@ class RANS {
   MPVector _accept_vector;
 };
 
-RANS::RANS(const std::string &regex, Encoding enc = ASCII, bool factorial = false):
-    _ok(true), _dfa(regex, rans::Encoding(enc), true, factorial),
+RANS::RANS(const std::string &regex, Encoding enc = ASCII, bool factorial = false, bool ignorecase = false):
+    _ok(true), _dfa(regex, rans::Encoding(enc), true, factorial, ignorecase),
     _spectrum(0, 0),
     _match_epsilon(_dfa.accept(DFA::START) ? 1 : 0),
     _extended_state(_dfa.size())
@@ -1621,9 +1641,9 @@ double RANS::compression_ratio(int count_ = -1, const RANS& base = baseBYTE) con
       // compression ratio is infinity, then return -1;
       return -1;
     }
-  } else {
-    return static_cast<double>(base.rep(count(count_, true) - 1).length()) / count_;
   }
+
+  return static_cast<double>(base.rep(count(count_, true) - 1).length()) / count_;
 }
 
 double RANS::compression_ratio(const std::string& text, const RANS& base = baseBYTE) const

@@ -9,9 +9,10 @@ DEFINE_bool(dump_dfa, false, "dump DFA as dot language.");
 DEFINE_bool(dump_matrix, false, "dump Matrix.");
 DEFINE_bool(dump_exmatrix, false, "dump Extended Matrix.");
 DEFINE_bool(dump_scc, false, "dump Strongly-connected-components of DFA.");
-DEFINE_string(f, "", "obtain patterns from FILE.");
+DEFINE_string(f, "", "obtain pattern from FILE.");
 DEFINE_bool(i, false, "ignore case distinctions in both the REGEX and the input files..");
 DEFINE_string(text, "", "print the value of given text on ANS.");
+DEFINE_string(textf, "", "obtain text from FILE.");
 DEFINE_string(quick_check, "", "check wheter given text is acceptable or not.");
 DEFINE_string(value, "", "print the text of given value on ANS.");
 DEFINE_bool(verbose, false, "report additional informations.");
@@ -58,8 +59,17 @@ int main(int argc, char* argv[])
     std::cout << google::ProgramUsage() << std::endl;
     return 0;
   }
+  if (FLAGS_text.empty() && !FLAGS_textf.empty()) {
+    std::ifstream ifs(FLAGS_textf.data());
+    if (ifs.fail()) {
+      std::cout << FLAGS_textf + " does not exists." << std::endl;
+      exit(0);
+    }
+    ifs >> FLAGS_text;
+  }
 
   RANS::Encoding enc = FLAGS_utf8 ? RANS::UTF8 : RANS::ASCII;
+  
   if (!FLAGS_convert_from.empty() && !FLAGS_convert_to.empty()) {
     RANS from(FLAGS_convert_from, enc, FLAGS_factorial, FLAGS_i),
         to(FLAGS_convert_to, enc, FLAGS_factorial, FLAGS_i);

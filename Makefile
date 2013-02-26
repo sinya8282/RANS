@@ -7,6 +7,7 @@ else
 CXXFLAGS=-O3
 endif
 RANS_CXXFLAGS=-I${shell pwd} -lgmp -lgmpxx
+GIT_REV=${shell git log -1 --format="%h"}
 
 prefix=/usr/local
 exec_prefix=$(prefix)
@@ -27,7 +28,7 @@ check: test
 
 bin/rans: rans.hpp test/rans.cc Makefile
 	@mkdir -p $$(dirname $@)
-	$(CXX) $(CXXFLAGS) $(RANS_CXXFLAGS) test/rans.cc -o $@ -lgflags
+	$(CXX) $(CXXFLAGS) $(RANS_CXXFLAGS) test/rans.cc -o $@ -lgflags -DGIT_REV=\"$(GIT_REV)\"
 
 bin/test: rans.hpp test/test.cc Makefile
 	@mkdir -p $$(dirname $@)

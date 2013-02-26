@@ -42,6 +42,7 @@ int main(int argc, char* argv[])
       "Usage: rans REGEX [Flags ...] \n"
       "You can check RANS extended regular expression syntax via '--syntax' option."
                           );
+  google::SetVersionString(std::string("build rev: ")+std::string(GIT_REV));
   google::ParseCommandLineFlags(&argc, &argv, true);
 
   if (FLAGS_syntax) {

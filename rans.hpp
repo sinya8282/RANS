@@ -469,7 +469,7 @@ Parser::ExprType Parser::consume_metachar()
     case 'D': // or not
       _cc_table.reset();
       for (unsigned char c = '0'; c <= '9'; c++) _cc_table.set(c);
-      if (_literal == 'D') _cc_table.flip();
+      if (lex_char() == 'D') _cc_table.flip();
       token = kByteRange;
       break;
     case 'f': /* form feed */
@@ -489,7 +489,7 @@ Parser::ExprType Parser::consume_metachar()
       _cc_table.reset();
       _cc_table.set('\t'); _cc_table.set('\n'); _cc_table.set('\f');
       _cc_table.set('\r'); _cc_table.set(' ');
-      if (_literal == 'S') _cc_table.flip();
+      if (lex_char() == 'S') _cc_table.flip();
       token = kByteRange;
       break;
     case 't': /* horizontal tab */
@@ -507,7 +507,7 @@ Parser::ExprType Parser::consume_metachar()
       for (unsigned char c = 'A'; c <= 'Z'; c++) _cc_table.set(c);
       for (unsigned char c = 'a'; c <= 'z'; c++) _cc_table.set(c);
       _cc_table.set('_');
-      if (_literal == 'W') _cc_table.flip();
+      if (lex_char() == 'W') _cc_table.flip();
       token = kByteRange;
       break;
     case 'x': {

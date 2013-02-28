@@ -13,13 +13,13 @@ DEFINE_string(f, "", "obtain pattern from FILE.");
 DEFINE_bool(i, false, "ignore case distinctions in both the REGEX and the input files..");
 DEFINE_string(text, "", "print the value of given text on ANS.");
 DEFINE_string(textf, "", "obtain text from FILE.");
-DEFINE_string(quick_check, "", "check wheter given text is acceptable or not.");
+DEFINE_string(check, "", "check wheter given text is acceptable or not.");
 DEFINE_string(value, "", "print the text of given value on ANS.");
 DEFINE_bool(verbose, false, "report additional informations.");
 DEFINE_bool(syntax, false, "print RANS regular expression syntax.");
 DEFINE_bool(utf8, false, "use utf8 as internal encoding.");
-DEFINE_string(convert_from, "", "convert the given value base from the given expression.");
-DEFINE_string(convert_to, "", "convert the given value base to the given expression.");
+DEFINE_string(from, "", "convert the given value base from the given expression.");
+DEFINE_string(into, "", "convert the given value base to the given expression.");
 DEFINE_string(compress, "", "compress the given file (create '.rans' file, by default).");
 DEFINE_string(decompress, "", "decompress the given file");
 DEFINE_string(out, "", "output file name.");
@@ -56,7 +56,7 @@ int main(int argc, char* argv[])
     ifs >> regex;
   } else if (argc > 1) {
     regex = argv[1];
-  } else if (FLAGS_convert_from.empty() || FLAGS_convert_to.empty()) {
+  } else if (FLAGS_from.empty() || FLAGS_into.empty()) {
     std::cout << google::ProgramUsage() << std::endl;
     return 0;
   }
@@ -71,9 +71,9 @@ int main(int argc, char* argv[])
 
   RANS::Encoding enc = FLAGS_utf8 ? RANS::UTF8 : RANS::ASCII;
   
-  if (!FLAGS_convert_from.empty() && !FLAGS_convert_to.empty()) {
-    RANS from(FLAGS_convert_from, enc, FLAGS_factorial, FLAGS_i),
-        to(FLAGS_convert_to, enc, FLAGS_factorial, FLAGS_i);
+  if (!FLAGS_from.empty() && !FLAGS_into.empty()) {
+    RANS from(FLAGS_from, enc, FLAGS_factorial, FLAGS_i),
+        to(FLAGS_into, enc, FLAGS_factorial, FLAGS_i);
     if (!from.ok() || !to.ok()) {
       std::cout << from.error() << std::endl << to.error() << std::endl;
       exit(0);
@@ -140,8 +140,8 @@ void dispatch(const RANS& r) {
     }
   } else if (FLAGS_count >= 0) {
     std::cout << r.count(FLAGS_count) << std::endl;
-  } else if (!FLAGS_quick_check.empty()) {
-    if (r.dfa().accept(FLAGS_quick_check)) {
+  } else if (!FLAGS_check.empty()) {
+    if (r.dfa().accept(FLAGS_check)) {
       std::cout << "text is acceptable." << std::endl;
     } else {
       std::cout << "text is not acceptable." << std::endl;

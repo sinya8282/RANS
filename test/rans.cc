@@ -5,10 +5,10 @@
 #include <fstream>
 #include <string>
 
-DEFINE_bool(dump_dfa, false, "dump DFA as dot language.");
-DEFINE_bool(dump_matrix, false, "dump Matrix.");
-DEFINE_bool(dump_exmatrix, false, "dump Extended Matrix.");
-DEFINE_bool(dump_scc, false, "dump Strongly-connected-components of DFA.");
+DEFINE_bool(dfa, false, "dump DFA as dot language.");
+DEFINE_bool(matrix, false, "dump Matrix.");
+DEFINE_bool(exmatrix, false, "dump Extended Matrix.");
+DEFINE_bool(scc, false, "dump Strongly-connected-components of DFA.");
 DEFINE_string(f, "", "obtain pattern from FILE.");
 DEFINE_bool(i, false, "ignore case distinctions in both the REGEX and the input files..");
 DEFINE_string(text, "", "print the value of given text on ANS.");
@@ -24,13 +24,13 @@ DEFINE_string(compress, "", "compress the given file (create '.rans' file, by de
 DEFINE_string(decompress, "", "decompress the given file");
 DEFINE_string(out, "", "output file name.");
 DEFINE_bool(size, false, "print the size of the DFA.");
-DEFINE_bool(repl, false, "start REPL.");
 DEFINE_bool(amount, false, "print number of acceptable strings that has less than '--value' characters in length.");
 DEFINE_int64(count, -1, "print number of acceptable strings that just has specified characters in length.");
 DEFINE_bool(compression_ratio, false, "print asymptotic compression ratio [%].");
 DEFINE_bool(frobenius_root, false, "print frobenius root of adjacency matrix.");
 DEFINE_bool(frobenius_root2, false, "print frobenius root of adjacency matrix without linear algebraic optimization.");
 DEFINE_bool(factorial, false, "make langauge as a factorial");
+DEFINE_bool(tovalue, false, "convert the given text into the correspondence value");
 
 void dispatch(const RANS&);
 void set_filename(const std::string&, std::string&);
@@ -97,10 +97,10 @@ int main(int argc, char* argv[])
     exit(0);
   }
 
-  if (FLAGS_dump_dfa) std::cout << r.dfa();
-  if (FLAGS_dump_matrix) std::cout << r.adjacency_matrix();
-  if (FLAGS_dump_exmatrix) std::cout << r.extended_adjacency_matrix();
-  if (FLAGS_dump_scc) {
+  if (FLAGS_dfa) std::cout << r.dfa();
+  if (FLAGS_matrix) std::cout << r.adjacency_matrix();
+  if (FLAGS_exmatrix) std::cout << r.extended_adjacency_matrix();
+  if (FLAGS_scc) {
     for (std::size_t i = 0; i < r.scc().size(); i++) {
       for (std::set<std::size_t>::iterator iter = r.scc()[i].begin();
            iter != r.scc()[i].end(); ++iter) {
@@ -109,12 +109,13 @@ int main(int argc, char* argv[])
       std::cout << std::endl;
     }
   }
-  
-  try {
-    dispatch(r);
-  } catch (RANS::Exception& e) {
-    std::cout << e.what() << std::endl;
-    exit(0);
+  if (!(FLAGS_dfa || FLAGS_matrix || FLAGS_exmatrix || FLAGS_scc)) {
+    try {
+      dispatch(r);
+    } catch (RANS::Exception& e) {
+      std::cout << e.what() << std::endl;
+      exit(0);
+    }
   }
   
   return 0;
@@ -192,14 +193,15 @@ void dispatch(const RANS& r) {
     std::cout << r(RANS::Value(FLAGS_value)) << std::endl;
   } else if (!FLAGS_text.empty()) {
     std::cout << r(FLAGS_text) << std::endl;
-  } else if (FLAGS_repl) {
-    std::string text;
-    RANS::Value value;
-
-    while (std::cin >> text) {
+  } else {
+    std::string input;
+    while (std::cin >> input) {
       try {
-        std::cout << r(text, value) << std::endl;
-        std::cout << r(value, text) << std::endl;
+        if (FLAGS_tovalue) {
+          std::cout << r(input) << std::endl;
+        } else {
+          std::cout << r(RANS::Value(input)) << std::endl;
+        }
       } catch(const RANS::Exception& e) {
         std::cout << e.what() << std::endl;
       }

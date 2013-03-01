@@ -63,8 +63,8 @@ int main(int argc, char* argv[])
   if (FLAGS_text.empty() && !FLAGS_textf.empty()) {
     std::ifstream ifs(FLAGS_textf.data());
     if (ifs.fail()) {
-      std::cout << FLAGS_textf + " does not exists." << std::endl;
-      exit(0);
+      std::cerr << FLAGS_textf + " does not exists." << std::endl;
+      return 0;
     }
     ifs >> FLAGS_text;
   }
@@ -75,8 +75,8 @@ int main(int argc, char* argv[])
     RANS from(FLAGS_from, enc, FLAGS_factorial, FLAGS_i),
         to(FLAGS_into, enc, FLAGS_factorial, FLAGS_i);
     if (!from.ok() || !to.ok()) {
-      std::cout << from.error() << std::endl << to.error() << std::endl;
-      exit(0);
+      std::cerr << from.error() << std::endl << to.error() << std::endl;
+      return 0;
     }
 
     if (FLAGS_compression_ratio) {
@@ -85,7 +85,7 @@ int main(int argc, char* argv[])
       try {
         std::cout << to(from(FLAGS_text)) << std::endl;
       } catch (RANS::Exception& e) {
-        std::cout << e.what() << std::endl;
+        std::cerr << e.what() << std::endl;
       }
     }
     return 0;
@@ -93,8 +93,8 @@ int main(int argc, char* argv[])
 
   RANS r(regex, enc, FLAGS_factorial, FLAGS_i);
   if (!r.ok()) {
-    std::cout << r.error() << std::endl;
-    exit(0);
+    std::cerr << r.error() << std::endl;
+    return 0;
   }
 
   if (FLAGS_dfa) std::cout << r.dfa();
@@ -113,8 +113,7 @@ int main(int argc, char* argv[])
     try {
       dispatch(r);
     } catch (RANS::Exception& e) {
-      std::cout << e.what() << std::endl;
-      exit(0);
+      std::cerr << e.what() << std::endl;
     }
   }
   
@@ -133,7 +132,7 @@ void dispatch(const RANS& r) {
       if (r.finite()) {
         std::cout << r.amount() << std::endl;
       } else {
-        std::cout << "there exists infinite acceptable strings." << std::endl;
+        std::cerr << "there exists infinite acceptable strings." << std::endl;
       }
     } else {
       std::cout << r.amount(FLAGS_count) << std::endl;
@@ -141,17 +140,17 @@ void dispatch(const RANS& r) {
   } else if (FLAGS_count >= 0) {
     std::cout << r.count(FLAGS_count) << std::endl;
   } else if (!FLAGS_check.empty()) {
-    if (r.dfa().accept(FLAGS_check)) {
-      std::cout << "text is acceptable." << std::endl;
+    if (r.accept(FLAGS_check)) {
+      std::cerr << "text is acceptable." << std::endl;
     } else {
-      std::cout << "text is not acceptable." << std::endl;
+      std::cerr << "text is not acceptable." << std::endl;
     }
   } else if (!FLAGS_compress.empty()) {
     std::string text;
     std::ifstream ifs(FLAGS_compress.data(), std::ios::in | std::ios::binary);
     if (ifs.fail()) {
-      std::cout << FLAGS_decompress + " does not exists." << std::endl;
-      exit(0);
+      std::cerr << FLAGS_decompress + " does not exists." << std::endl;
+      return;
     }
     ifs >> text;
 
@@ -170,8 +169,8 @@ void dispatch(const RANS& r) {
   } else if (!FLAGS_decompress.empty()) {
     std::ifstream ifs(FLAGS_decompress.data(), std::ios::in | std::ios::binary);
     if (ifs.fail()) {
-      std::cout << FLAGS_decompress + " does not exists." << std::endl;
-      exit(0);
+      std::cerr << FLAGS_decompress + " does not exists." << std::endl;
+      return;
     }
 
     std::istreambuf_iterator<char> first(ifs);
@@ -179,13 +178,13 @@ void dispatch(const RANS& r) {
     std::string text(first, last);
 
     set_filename(FLAGS_decompress, FLAGS_out);
-    if (FLAGS_out.empty()) exit(0);
+    if (FLAGS_out.empty()) return;
     std::ofstream ofs(FLAGS_out.data(), std::ios::out | std::ios::binary);
     try {
       std::string dst;
       ofs << r.decompress(text, dst);
     } catch (const RANS::Exception &e) {
-      std::cout << e.what() << std::endl;
+      std::cerr << e.what() << std::endl;
     }
   } else if (FLAGS_size) {
     std::cout << "size of DFA: " << r.dfa().size() << std::endl;
@@ -195,15 +194,17 @@ void dispatch(const RANS& r) {
     std::cout << r(FLAGS_text) << std::endl;
   } else {
     std::string input;
+    RANS num("[0-9]+");
     while (std::cin >> input) {
       try {
         if (FLAGS_tovalue) {
           std::cout << r(input) << std::endl;
         } else {
-          std::cout << r(RANS::Value(input)) << std::endl;
+          if (num.accept(input)) std::cout << r(RANS::Value(input)) << std::endl;
+          else std::cerr << "invalid value: " << input << std::endl;
         }
       } catch(const RANS::Exception& e) {
-        std::cout << e.what() << std::endl;
+        std::cerr << e.what() << std::endl;
       }
     }
   }

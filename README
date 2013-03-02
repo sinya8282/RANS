@@ -4,7 +4,7 @@
   |  __ /      / ___ \     | |\ \| |   \_____`.
  _| |  \ \_  _/ /   \ \_  _| |_\   |_ | \____) |
 |____| |___||____| |____||_____|\____| \______.'
-The implimentation of an Abstract Numeration System on a Regular Language.
+An implimentation of an Abstract Numeration System on a Regular Language.
 
 This is the source code repository for RANS, a data conversion library
 using regular expressions.

@@ -32,7 +32,7 @@
     <!-- MAIN CONTENT -->
     <div id="main_content_wrap" class="outer">
       <section id="main_content" class="inner">
-		<pre><code class="prettyprint lang-sh">1462290815058406142878645747899975197440717007135</code></pre>
+		<pre><code class="prettyprint lang-sh">36858570256415121325678741627137383137485170961739808804878081</code></pre>
 		<p>Can you guess what this number means? I assure you that it will be clear, if you read this page through!　<span style="float: right;">--<a href="http://swatmac.info/?p=942">日本語解説 at sw@mac.info</a></span></p>
 
         <h3>Introduction</h3>
@@ -41,7 +41,7 @@
 RANS's concept is very simple, just calculates the number from the given string on a regular language. In other words,
 <ul>
   <li>RANS provides the minimal perfect hash function that maps string to positive integer.</li>
-  <li>RANS provides the 'val' that is the bijective function from N onto a language.</li>
+  <li>RANS provides the 'val' that is the bijective function (one-to-one correspondence) from N onto a language.</li>
   <li>　　 and 'rep' is the inverse function of 'val'.</li>
   <li>RANS makes the set of acceptable string totally ordered by the <a href="http://en.wikipedia.org/wiki/Lexicographical_order#Ordering_of_sequences_of_various_lengths">Lexicographic order</a>.</li>
 </ul>
@@ -81,11 +81,11 @@ You can check RANS extended regular expression syntax via '--syntax' option.
 % rans "a*(c*|b*)" --value 2382
 aaaaaaaaaccccccccccccccccccccccccccccccccccccccc
 % # you can use a convesion via pipe, as well.
-% echo a aa aaa | bin/rans 'a*' --tovalue
+% echo a aa aaa | rans 'a*' --tovalue
 1
 2
 3
-% echo 1 2 3 | bin/rans 'a*'
+% echo 1 2 3 | rans 'a*'
 a
 aa
 aaa
@@ -142,32 +142,33 @@ Okay, here I give the more practical example about "compression". That is, http-
 In this example, we consider the more simple regular expression of http-url, such as:
 </p>
 
-<pre><code>http://((([a-zA-Z0-9]|[a-zA-Z0-9][-a-zA-Z0-9]*[a-zA-Z0-9])\\.)*([a-zA-Z]|[a-zA-Z][-a-zA-Z0-9]*[a-zA-Z0-9])\\.?|[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+)(:[0-9]*)?(/([-_.!~*'()a-zA-Z0-9:@&=+$,]|%[0-9A-Fa-f][0-9A-Fa-f])*(;([-_.!~*'()a-zA-Z0-9:@&=+$,]|%[0-9A-Fa-f][0-9A-Fa-f])*)*(/([-_.!~*'()a-zA-Z0-9:@&=+$,]|%[0-9A-Fa-f][0-9A-Fa-f])*(;([-_.!~*'()a-zA-Z0-9:@&=+$,]|%[0-9A-Fa-f][0-9A-Fa-f])*)*)*(\\?([-_.!~*'()a-zA-Z0-9;/?:@&=+$,]|%[0-9A-Fa-f][0-9A-Fa-f])*)?)?
+<pre><code>[a-z][\x2b\x2d\x2e0-9a-z]*:(//(([\x2d\x2e0-9_a-z~]|%[0-9a-f][0-9a-f]|[!\x24&-,:;=])*@)?(\x5b(([0-9a-f]{1,4}:){6}([0-9a-f]{1,4}:[0-9a-f]{1,4}|(\d|[1-9]\d|1\d{2}|2[0-4]\d|25[0-5])\x2e(\d|[1-9]\d|1\d{2}|2[0-4]\d|25[0-5])\x2e(\d|[1-9]\d|1\d{2}|2[0-4]\d|25[0-5])\x2e(\d|[1-9]\d|1\d{2}|2[0-4]\d|25[0-5]))|::([0-9a-f]{1,4}:){5}([0-9a-f]{1,4}:[0-9a-f]{1,4}|(\d|[1-9]\d|1\d{2}|2[0-4]\d|25[0-5])\x2e(\d|[1-9]\d|1\d{2}|2[0-4]\d|25[0-5])\x2e(\d|[1-9]\d|1\d{2}|2[0-4]\d|25[0-5])\x2e(\d|[1-9]\d|1\d{2}|2[0-4]\d|25[0-5]))|([0-9a-f]{1,4})?::([0-9a-f]{1,4}:){4}([0-9a-f]{1,4}:[0-9a-f]{1,4}|(\d|[1-9]\d|1\d{2}|2[0-4]\d|25[0-5])\x2e(\d|[1-9]\d|1\d{2}|2[0-4]\d|25[0-5])\x2e(\d|[1-9]\d|1\d{2}|2[0-4]\d|25[0-5])\x2e(\d|[1-9]\d|1\d{2}|2[0-4]\d|25[0-5]))|(([0-9a-f]{1,4}:)?[0-9a-f]{1,4})?::([0-9a-f]{1,4}:){3}([0-9a-f]{1,4}:[0-9a-f]{1,4}|(\d|[1-9]\d|1\d{2}|2[0-4]\d|25[0-5])\x2e(\d|[1-9]\d|1\d{2}|2[0-4]\d|25[0-5])\x2e(\d|[1-9]\d|1\d{2}|2[0-4]\d|25[0-5])\x2e(\d|[1-9]\d|1\d{2}|2[0-4]\d|25[0-5]))|(([0-9a-f]{1,4}:){0,2}[0-9a-f]{1,4})?::([0-9a-f]{1,4}:){2}([0-9a-f]{1,4}:[0-9a-f]{1,4}|(\d|[1-9]\d|1\d{2}|2[0-4]\d|25[0-5])\x2e(\d|[1-9]\d|1\d{2}|2[0-4]\d|25[0-5])\x2e(\d|[1-9]\d|1\d{2}|2[0-4]\d|25[0-5])\x2e(\d|[1-9]\d|1\d{2}|2[0-4]\d|25[0-5]))|(([0-9a-f]{1,4}:){0,3}[0-9a-f]{1,4})?::[0-9a-f]{1,4}:([0-9a-f]{1,4}:[0-9a-f]{1,4}|(\d|[1-9]\d|1\d{2}|2[0-4]\d|25[0-5])\x2e(\d|[1-9]\d|1\d{2}|2[0-4]\d|25[0-5])\x2e(\d|[1-9]\d|1\d{2}|2[0-4]\d|25[0-5])\x2e(\d|[1-9]\d|1\d{2}|2[0-4]\d|25[0-5]))|(([0-9a-f]{1,4}:){0,4}[0-9a-f]{1,4})?::([0-9a-f]{1,4}:[0-9a-f]{1,4}|(\d|[1-9]\d|1\d{2}|2[0-4]\d|25[0-5])\x2e(\d|[1-9]\d|1\d{2}|2[0-4]\d|25[0-5])\x2e(\d|[1-9]\d|1\d{2}|2[0-4]\d|25[0-5])\x2e(\d|[1-9]\d|1\d{2}|2[0-4]\d|25[0-5]))|(([0-9a-f]{1,4}:){0,5}[0-9a-f]{1,4})?::[0-9a-f]{1,4}|(([0-9a-f]{1,4}:){0,6}[0-9a-f]{1,4})?::|v[0-9a-f]+\x2e[!\x24&-\x2e0-;=_a-z~]+)\x5d|(\d|[1-9]\d|1\d{2}|2[0-4]\d|25[0-5])\x2e(\d|[1-9]\d|1\d{2}|2[0-4]\d|25[0-5])\x2e(\d|[1-9]\d|1\d{2}|2[0-4]\d|25[0-5])\x2e(\d|[1-9]\d|1\d{2}|2[0-4]\d|25[0-5])|([\x2d\x2e0-9_a-z~]|%[0-9a-f][0-9a-f]|[!\x24&-,;=])*)(:\d*)?(/([\x2d\x2e0-9_a-z~]|%[0-9a-f][0-9a-f]|[!\x24&-,:;=@])*)*|/(([\x2d\x2e0-9_a-z~]|%[0-9a-f][0-9a-f]|[!\x24&-,:;=@])+(/([\x2d\x2e0-9_a-z~]|%[0-9a-f][0-9a-f]|[!\x24&-,:;=@])*)*)?|([\x2d\x2e0-9_a-z~]|%[0-9a-f][0-9a-f]|[!\x24&-,:;=@])+(/([\x2d\x2e0-9_a-z~]|%[0-9a-f][0-9a-f]|[!\x24&-,:;=@])*)*)?(\x3f([\x2d\x2e0-9_a-z~]|%[0-9a-f][0-9a-f]|[!\x24&-,/:;=\x3f@])*)?(\x23([\x2d\x2e0-9_a-z~]|%[0-9a-f][0-9a-f]|[!\x24&-,/:;=\x3f@])*)?
 </code></pre>
 
-<p>This is hairy, pathological expression. However, the minimal DFA that corresponds this has only 26 states. I generated one graph of this DFA via --dfa option (also this expression is contained in the repository: test/<a href="http://github.com/sinya8282/RANS/blob/master/test/http-url.regex">http-url.regex</a>).</p>
-<pre><code class="prettyprint lang-sh"> % rans -f test/http-url.regex --dfa | dot -Tpng -o http-url.png </code></pre>
-<p>as shown below. <img src="images/http-url.png"></p>
+<p>This is hairy, pathological expression. However, the minimal consistent DFA has 180 states. I generated one graph of this DFA via --dfa option (also this expression is contained in the repository: test/<a href="http://github.com/sinya8282/RANS/blob/master/test/uri.rfc3986.regex">uri.rfc3986.regex</a>).</p>
+<pre><code class="prettyprint lang-sh"> % rans -f test/uri.rfc3968.regex --dfa | dot -Tpdf -o http-url.pdf </code></pre>
+<p>The DFA has many transition rules as shown below. <a href="images/uri.rfc3986.pdf" target="_blank"><img src="images/uri.rfc3986.png"></a></p>
 <p>
 
-<p>Good. http-url is definable by the regular expression, recognizable by the DFA, and so enumerable with RANS.</br>
+<p>Okay, http-url is definable by the regular expression, recognizable by the DFA, and hence enumerable with RANS.</br>
 Let's try to get the number of this page's http-url: <a href="http://sinya8282.github.com/RANS/">http://sinya8282.github.com/RANS/</a>
 </p>
-<pre><code class="prettyprint lang-sh">% rans -f test/http-url.regex --text "http://sinya8282.github.com/RANS/"
-1462290815058406142878645747899975197440717007135
-% rans -f test/http-url.regex --value 1462290815058406142878645747899975197440717007135
+<pre><code class="prettyprint lang-sh">% # -i option means 'ignore case'
+% rans -i -f test/uri.rfc3986.regex --text "http://sinya8282.github.com/RANS/"
+36858570256415121325678741627137383137485170961739808804878081
+% rans -i -f test/uri.rfc3986.regex --value 
 http://sinya8282.github.com/RANS/
-% # Do you remember seeing that number somewhere before ? ;-)
+% # Do you remember seeing that number somewhere before ?
 </code></pre>
 
-<p>and the data size of this url and the number is 33 and 20 (Bytes). You can make sure it by --compress/--decompress options.</p>
+<p>and the data size of this url and the correspondence number is 33 and 26 (Bytes). You can make sure it by --compress/--decompress options.</p>
 <pre><code class="prettyprint lang-sh">% echo -n "http://sinya8282.github.com/RANS/" > url
-% rans -f test/http-url.regex --compress url 
+% rans -i -f test/uri.rfc3986.regex --compress url
 % ls -lh url url.rans   # compressed file is created with '.rans' extension
--rw-r--r--  1 sinya  staff  33 May 15 21:34 url
--rw-r--r--  1 sinya  staff  20 May 15 21:34 url.rans
+-rw-r--r--  1 ryoma  staff    33B Mar  3 20:15 url
+-rw-r--r--  1 ryoma  staff    26B Mar  3 20:15 url.rans
 % rm url
-% rans -f test/http-url.regex --decompress url.rans
+% rans -f test/uri.rfc3986.regex --decompress url.rans
 % cat url
 http://sinya8282.github.com/RANS/
 </code></pre>

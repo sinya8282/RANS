@@ -176,6 +176,8 @@ class Parser {
   bool lex_is_quantifier();
   ExprType consume_repetition();
   ExprType consume_metachar();
+  bool metachar() const { return _metachar; }
+  void metachar(bool m) { _metachar = m; }
 
   void parse();
   Expr* parse_union();
@@ -202,6 +204,7 @@ class Parser {
   std::bitset<256> _cc_table;
   unsigned char _literal;
   int _repeat_min, _repeat_max;
+  bool _metachar;
   ExprType _token;
 };
 
@@ -330,7 +333,7 @@ Parser::Expr* Parser::clone_expr(Expr* orig)
   return clone;
 }
 
-Parser::Parser(const std::string& regex, Encoding enc): _ok(true), _regex(regex), _encoding(enc)
+Parser::Parser(const std::string& regex, Encoding enc): _ok(true), _regex(regex), _encoding(enc), _metachar(false)
 {
   _regex_begin = _regex_ptr = reinterpret_cast<const unsigned char*>(_regex.data());
   _regex_end = reinterpret_cast<const unsigned char*>(_regex.data()) + _regex.length();
@@ -351,6 +354,7 @@ Parser::ExprType Parser::consume()
     return _token;
   }
 
+  bool meta = false;
   switch (_literal = lex_char()) {
     case '[': _token = kCharClass; break;
     case '.': _token = kDot;   break;
@@ -361,11 +365,12 @@ Parser::ExprType Parser::consume()
     case '(': _token = kLpar;  break;
     case ')': _token = kRpar;  break;
     case '{': consume_char(); _token = consume_repetition(); break;
-    case '\\': consume_char(); _token = consume_metachar();  break;
+    case '\\':consume_char(); meta = true; _token = consume_metachar(); break;
     default:
       if (_encoding == UTF8 && utf8_byte_length(_literal) != 1) {
         if (!is_valid_utf8_sequence(_regex_ptr)) throw "invalid utf8 sequence";
         _token = kUTF8;
+        metachar(false);
         return _token;
       } else {
         _token = kLiteral;
@@ -374,6 +379,7 @@ Parser::ExprType Parser::consume()
   }
 
   consume_char();
+  metachar(meta);
   
   return _token;
 }
@@ -696,7 +702,7 @@ Parser::Expr* Parser::parse_charclass()
 
   consume();
   
-  if (_literal == '^') {
+  if (_literal == '^' && !metachar()) {
     consume();
     negative = true;
   }
@@ -708,7 +714,7 @@ Parser::Expr* Parser::parse_charclass()
   }
 
   for (; lex() != kEOP && _literal != ']'; consume()) {
-    if (!range && _literal == '-') {
+    if (!range && _literal == '-' && !metachar()) {
       range = true;
       continue;
     }

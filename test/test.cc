@@ -266,8 +266,8 @@ TEST(URI_TEST, DFA_MINIMIZE) {
 }
 
 const std::string homepage_url("http://swatmac.info/");
-const RANS::Value homepage_val_rfc2396("47707318137249109960017513245316138");
-const RANS::Value homepage_val_rfc3986("846983527258207777892746259575925");
+const RANS::Value homepage_val_rfc2396("47658676310213233887951893241118230");
+const RANS::Value homepage_val_rfc3986("797395729150436720868948873733223");
 
 TEST(URI_TEST, RANS_VAL) {
   ASSERT_EQ(homepage_val_rfc2396, base_uri2396(homepage_url));

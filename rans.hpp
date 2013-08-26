@@ -752,7 +752,7 @@ void Parser::fill_transition(Expr *expr)
   switch (expr->type) {
     case kLiteral: case kCharClass: case kDot: case kEOP:
       _all_expr.insert(expr);
-      // false through
+      break;
     case kEpsilon:
       break;
     case kConcat:

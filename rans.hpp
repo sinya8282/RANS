@@ -1243,9 +1243,12 @@ std::ostream& operator<<(std::ostream& stream, const MPMatrix& matrix)
   for (std::size_t i = 0; i < matrix.size(); i++) {
     stream << "{";
     for (std::size_t j = 0; j < matrix.size(); j++) {
-      stream << matrix(i, j) << ", ";
+      stream << matrix(i, j);
+      if (j != matrix.size() - 1) stream << ",";
     }
-    stream << "}," << std::endl;
+    stream << "}";
+    if (i != matrix.size() - 1) stream << ",";
+    stream << std::endl;
   }
   return stream;
 }

@@ -904,7 +904,7 @@ std::string& rans::DFA::pretty(unsigned char c, std::string &label)
   return label;
 }
 
-DFA::DFA(const std::string &regex, Encoding enc = ASCII, bool do_minimize = true, bool factorial = false, bool ignorecase = false): _ok(true), _factorial(factorial), _ignorecase(ignorecase)
+DFA::DFA(const std::string &regex, Encoding enc = ASCII, bool minimizing = true, bool factorial = false, bool ignorecase = false): _ok(true), _factorial(factorial), _ignorecase(ignorecase)
 {
   Parser p(regex, enc);
   if (!p.ok()) {
@@ -923,7 +923,7 @@ DFA::DFA(const std::string &regex, Encoding enc = ASCII, bool do_minimize = true
    }
 
   try {
-    if (do_minimize) minimize();
+    if (minimizing) minimize();
   } catch (const char* error) {
     _ok = false;
     _error = "dfa minimize error: ";
@@ -1353,7 +1353,7 @@ class RANS {
   };
   enum Encoding { ASCII = 0, UTF8 = 1 };
   typedef rans::Value Value;
-  RANS(const std::string&, Encoding, bool, bool);
+  RANS(const std::string&, Encoding, bool, bool, bool);
   bool ok() const { return _ok; }
   const std::string& error() const { return _error; }
   bool accept(const std::string& text) const { return _dfa.accept(text); }
@@ -1405,8 +1405,8 @@ class RANS {
   MPVector _accept_vector;
 };
 
-RANS::RANS(const std::string &regex, Encoding enc = ASCII, bool factorial = false, bool ignorecase = false):
-    _ok(true), _dfa(regex, rans::Encoding(enc), true, factorial, ignorecase),
+RANS::RANS(const std::string &regex, Encoding enc = ASCII, bool factorial = false, bool ignorecase = false, bool minimizing = true):
+    _ok(true), _dfa(regex, rans::Encoding(enc), minimizing, factorial, ignorecase),
     _spectrum(0, 0),
     _match_epsilon(_dfa.accept(DFA::START) ? 1 : 0),
     _extended_state(_dfa.size())

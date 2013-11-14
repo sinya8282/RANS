@@ -11,6 +11,7 @@ DEFINE_bool(exmatrix, false, "dump Extended Matrix.");
 DEFINE_bool(scc, false, "dump Strongly-connected-components of DFA.");
 DEFINE_string(f, "", "obtain pattern from FILE.");
 DEFINE_bool(i, false, "ignore case distinctions in both the REGEX and the input files..");
+DEFINE_bool(minimizing, true, "minimizing DFA");
 DEFINE_string(text, "", "print the value of given text on ANS.");
 DEFINE_string(textf, "", "obtain text from FILE.");
 DEFINE_string(check, "", "check wheter given text is acceptable or not.");
@@ -91,7 +92,7 @@ int main(int argc, char* argv[])
     return 0;
   }
 
-  RANS r(regex, enc, FLAGS_factorial, FLAGS_i);
+  RANS r(regex, enc, FLAGS_factorial, FLAGS_i, FLAGS_minimizing);
   if (!r.ok()) {
     std::cerr << r.error() << std::endl;
     return 0;

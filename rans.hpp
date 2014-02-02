@@ -951,7 +951,7 @@ void DFA::construct(Parser::Expr* expr_tree, const Subset& all_expr)
     std::fill(transition.begin(), transition.end(), Subset());
 
     for (Subset::iterator iter = subset.begin(); iter != subset.end(); ++iter) {
-      accept |= _factorial | (*iter)->type == Parser::kEOP;
+      accept |= _factorial | ((*iter)->type == Parser::kEOP);
       fill_transition(*iter, transition);
     }
     queue.pop();

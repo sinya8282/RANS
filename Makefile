@@ -32,7 +32,7 @@ bin/rans: rans.hpp test/rans.cc Makefile
 
 bin/test: rans.hpp test/test.cc Makefile
 	@mkdir -p $$(dirname $@)
-	$(CXX) $(CXXFLAGS) $(RANS_CXXFLAGS) test/test.cc test/gtest/gtest-all.cc test/gtest/gtest_main.cc -Itest -o $@
+	$(CXX) $(CXXFLAGS) $(RANS_CXXFLAGS) -DGTEST_USE_OWN_TR1_TUPLE=1 test/test.cc test/gtest/gtest-all.cc test/gtest/gtest_main.cc -Itest -o $@
 
 install: rans.hpp rans
 	mkdir -p $(DESTDIR)$(includedir) $(DESTDIR)$(bindir)
